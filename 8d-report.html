@@ -1,0 +1,875 @@
+<title>8D Report Demo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: register of all 8D reports (shared) -> open one: header record, KPI strip, D0-D8 roadmap rail, two-column workbench (discipline form | checks + history), shared action table */
+:root{
+  --bg:#f3f5f8; --surface:#ffffff; --sunken:#e9edf2; --line:#d5dbe4;
+  --fg:#17212e; --muted:#5b6878; --accent:#1d5fa8; --accent-soft:#e1ecf8; --on-accent:#ffffff;
+  --ok:#1f7a4d; --ok-soft:#e0f2e8; --warn:#9a6200; --warn-soft:#fbefd3; --bad:#b3261e; --bad-soft:#fbe4e2;
+  --display:"IBM Plex Sans","IBM Plex Sans Thai","Segoe UI",Tahoma,sans-serif;
+  --body:"IBM Plex Sans","IBM Plex Sans Thai","Segoe UI",Tahoma,sans-serif;
+  --mono:"IBM Plex Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#11161d; --surface:#1a212b; --sunken:#141a22; --line:#2e3846;
+  --fg:#e6ebf2; --muted:#9aa7b8; --accent:#6aa9ee; --accent-soft:#1c3250; --on-accent:#0c1622;
+  --ok:#5ec391; --ok-soft:#173526; --warn:#e3b04b; --warn-soft:#3a2e12; --bad:#f08a82; --bad-soft:#40201e;
+  color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#11161d; --surface:#1a212b; --sunken:#141a22; --line:#2e3846;
+  --fg:#e6ebf2; --muted:#9aa7b8; --accent:#6aa9ee; --accent-soft:#1c3250; --on-accent:#0c1622;
+  --ok:#5ec391; --ok-soft:#173526; --warn:#e3b04b; --warn-soft:#3a2e12; --bad:#f08a82; --bad-soft:#40201e;
+  color-scheme:dark }
+
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.55}
+.wrap{max-width:1240px;margin:0 auto;padding-block:24px 48px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.view{display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;line-height:1.3}
+h1{font-size:1.5rem;font-weight:700}
+h2{font-size:1.15rem;font-weight:600}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.lbl{font-size:.75rem;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+a{color:var(--accent)}
+
+.top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.top .brand{display:flex;flex-direction:column;gap:2px;min-width:0}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button{font:inherit;color:inherit;cursor:pointer}
+button:disabled{cursor:not-allowed;opacity:.55}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:6px 12px;font-weight:500;text-decoration:none;color:var(--fg);display:inline-block}
+.btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.primary:hover:not(:disabled){color:var(--on-accent);filter:brightness(1.08)}
+.btn.danger{border-color:var(--bad);color:var(--bad)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px}
+.meta{display:grid;grid-template-columns:2fr 1fr 1fr 1.4fr 1.4fr;gap:12px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+input[type=text],input[type=search],input[type=date],input[type=number],textarea,select{
+  font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;width:100%;box-sizing:border-box;min-width:0}
+textarea{resize:vertical;min-height:64px;line-height:1.5}
+input:focus,textarea:focus,select:focus{outline:2px solid var(--accent);outline-offset:0;border-color:var(--accent)}
+input:disabled,textarea:disabled,select:disabled{opacity:.8}
+::placeholder{color:var(--muted);opacity:1}
+
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.kpi{background:var(--surface);padding:12px 16px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.kpi b{font-family:var(--display);font-size:1.3rem;font-weight:600;line-height:1.3}
+.kpi b.mono{font-family:var(--mono)}
+.kpi .sub{font-size:.8rem}
+.t-bad{color:var(--bad)} .t-ok{color:var(--ok)} .t-warn{color:var(--warn)}
+
+.road{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:8px}
+.step{display:flex;flex-direction:column;gap:6px;text-align:left;background:var(--surface);border:1px solid var(--line);
+  border-top:4px solid var(--line);border-radius:6px;padding:10px;min-width:0}
+.step:hover{border-color:var(--accent)}
+.step.done{border-top-color:var(--ok)} .step.doing{border-top-color:var(--accent)}
+.step.done.ovr{border-top-color:var(--warn)}
+.done.ovr .dot{background:var(--warn);border-color:var(--warn);color:var(--surface)}
+.ovrnote{border:1px solid var(--warn);background:var(--warn-soft);border-radius:8px;padding:10px 14px;font-size:.88rem;display:flex;flex-direction:column;gap:4px}
+.ovrnote b{color:var(--fg)}
+.ovrnote ul{margin:0;padding-left:1.1em;color:var(--fg)}
+.pill.ovr{background:var(--warn-soft);color:var(--warn)}
+.step.sel{box-shadow:0 0 0 2px var(--accent);border-color:var(--accent)}
+.step .hd{display:flex;justify-content:space-between;align-items:center;gap:4px}
+.step .id{font-family:var(--mono);font-weight:600;font-size:.95rem}
+.step .nm{font-family:var(--display);font-weight:600;font-size:.86rem;line-height:1.3}
+.step .key{font-size:.76rem;color:var(--muted);line-height:1.45;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.step .ft{font-size:.72rem;margin-top:auto;line-height:1.4}
+.dot{width:18px;height:18px;border-radius:50%;display:inline-grid;place-items:center;font-size:.7rem;font-weight:700;flex:none;border:2px solid var(--line);color:transparent}
+.done .dot{background:var(--ok);border-color:var(--ok);color:var(--surface)}
+.doing .dot{border-color:var(--accent);background:radial-gradient(var(--accent) 45%,transparent 50%)}
+
+.bench{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(0,1fr);gap:20px;align-items:start}
+.side{display:flex;flex-direction:column;gap:20px;min-width:0}
+.detail{display:flex;flex-direction:column;gap:14px}
+.detail .q{color:var(--muted);margin:0;max-width:65ch}
+.dhead{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{border:0;background:var(--surface);padding:5px 12px;font-size:.85rem;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--on-accent);font-weight:600;opacity:1}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.row{display:flex;flex-wrap:wrap;gap:12px}
+.row .field{flex:1 1 160px}
+.tblwrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%}
+th{font-size:.75rem;text-align:left;color:var(--muted);font-weight:600;padding:4px 6px;white-space:nowrap;letter-spacing:.03em;text-transform:uppercase}
+td{padding:4px 6px;vertical-align:top}
+td.n{font-family:var(--mono);color:var(--muted);padding-top:11px;width:3.6em;white-space:nowrap;font-size:.85rem}
+.x{border:0;background:none;color:var(--muted);padding:6px 8px;border-radius:6px}
+.x:hover:not(:disabled){color:var(--bad);background:var(--bad-soft)}
+.acts td:nth-child(2){min-width:170px}.acts td:nth-child(3){min-width:260px}.acts td:nth-child(4){min-width:120px}
+.acts td:nth-child(5){min-width:140px}.acts td:nth-child(6){min-width:130px}
+.team td:nth-child(1),.team td:nth-child(2),.team td:nth-child(3){min-width:150px}
+.chk{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 16px;margin:0;padding:0;list-style:none}
+.chk label{display:flex;gap:8px;align-items:flex-start}
+.chk input{margin-top:5px;accent-color:var(--accent)}
+.pill{display:inline-block;font-size:.72rem;font-weight:600;border-radius:999px;padding:1px 8px;white-space:nowrap}
+.pill.bad{background:var(--bad-soft);color:var(--bad)} .pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)} .pill.info{background:var(--accent-soft);color:var(--accent)}
+.checks{display:flex;flex-direction:column;gap:10px}
+.checks ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.checks li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:start;font-size:.88rem;line-height:1.5}
+.find{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:start;width:100%;text-align:left;border:0;background:none;padding:6px 8px;margin:0 -8px;border-radius:6px;font-size:.88rem;line-height:1.5;box-sizing:content-box}
+.find:hover{background:var(--sunken)}
+.find svg{width:14px;height:14px;margin-top:4px;color:var(--muted);flex:none}
+.find:hover svg{color:var(--accent)}
+.checks li .find{grid-column:1/-1}
+.gate{border:1px solid var(--warn);background:var(--warn-soft);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.gate p{margin:0;font-weight:600;color:var(--fg)}
+.gate ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.gate .find:hover{background:var(--surface)}
+.acts tr.flash td{background:var(--warn-soft)}
+@media (prefers-reduced-motion:no-preference){.acts td{transition:background-color .6s ease-out}}
+.hist li{grid-template-columns:minmax(0,1fr);gap:0}
+/* report header */
+#r-title{font-size:1.6rem;max-width:40ch}
+.rsub{margin:0;color:var(--muted);font-size:.95rem}
+.rsub .mono{color:var(--fg);font-weight:600}
+.factbar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;padding-block:10px;border-block:1px solid var(--line)}
+.facts{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px 20px;align-items:center;font-size:.9rem;color:var(--muted)}
+.facts b{color:var(--fg);font-weight:600}
+/* actions inside a discipline */
+.dacts{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.dact{display:grid;grid-template-columns:auto minmax(0,1fr) 9.5rem;gap:6px 10px;padding:10px 0;border-bottom:1px solid var(--line);align-items:start}
+.dact .n{grid-row:1/3;padding-top:8px;color:var(--muted);font-size:.85rem}
+.dact select{grid-column:3;grid-row:1}
+.dmeta{grid-column:2/-1;display:grid;grid-template-columns:minmax(0,1fr) 10.5rem auto;gap:8px;align-items:center}
+.dmeta input{padding:5px 8px;font-size:.88rem}
+.issuelink{border:0;background:none;padding:0;font:inherit;font-size:.9rem;color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+.issuelink:hover{color:var(--fg)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+textarea.grow{min-height:38px;resize:none;field-sizing:content;max-height:14em;overflow-y:auto}
+/* undo toast */
+.toast{position:fixed;left:0;right:0;margin-inline:auto;width:max-content;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:40;display:flex;gap:14px;align-items:center;
+  background:var(--fg);color:var(--bg);padding:6px 6px 6px 14px;border-radius:8px;box-shadow:0 8px 24px rgba(10,20,35,.22);max-width:calc(100vw - 32px);font-size:.9rem}
+.toast .btn{background:var(--bg);color:var(--fg);border-color:var(--bg);font-weight:600}
+.toast .btn:hover:not(:disabled){color:var(--accent);border-color:var(--bg)}
+.hist .when{font-size:.76rem;color:var(--muted)}
+.sechead{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.note{font-size:.8rem;color:var(--muted)}
+#sumbox textarea{min-height:240px;font-family:var(--mono);font-size:.8rem}
+.banner{border:1px solid var(--warn);background:var(--warn-soft);color:var(--warn);border-radius:6px;padding:8px 12px;font-size:.88rem}
+
+/* register */
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+.filters input{flex:1 1 220px;max-width:340px}
+.reg th{padding:8px 10px;border-bottom:1px solid var(--line)}
+.reg td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+.reg tr:last-child td{border-bottom:0}
+.reg td.mono{white-space:nowrap}
+.reg .ttl{font-family:var(--display);font-weight:600;text-decoration:none;color:var(--fg);display:block;min-width:220px}
+.reg .ttl:hover{color:var(--accent);text-decoration:underline}
+.reg .subl{font-size:.8rem;color:var(--muted)}
+.prog{display:flex;gap:2px;margin-top:5px}
+.prog i{width:11px;height:6px;border-radius:1px;background:var(--sunken);border:1px solid var(--line);box-sizing:border-box}
+.prog i.done{background:var(--ok);border-color:var(--ok)} .prog i.doing{background:var(--accent);border-color:var(--accent)}
+.empty{padding:28px 8px;text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center}
+.empty p{margin:0;max-width:52ch;color:var(--muted)}
+
+/* export: busy cover + off-page sheet rendered into the PDF (always paper white, whatever the theme) */
+.busy{position:fixed;inset:0;z-index:60;background:var(--bg);display:grid;place-items:center;padding:16px}
+.busy div{display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center}
+.pdfhost{position:fixed;left:0;top:0;z-index:50;pointer-events:none}
+.ps{width:714px;box-sizing:border-box;background:#ffffff;color:#17212e;font-family:var(--body);font-size:12.5px;line-height:1.5;padding:2px 4px 6px}
+.ps h1{font-family:var(--display);font-size:21px;line-height:1.3;margin:2px 0 0;color:#17212e}
+.ps h2{font-family:var(--display);font-size:14.5px;margin:0 0 6px;padding-bottom:4px;border-bottom:2px solid #1d5fa8;color:#17212e;display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.ps h2 small{font-family:var(--body);font-size:11px;font-weight:500;color:#5b6878}
+.ps .k{font-size:10.5px;color:#5b6878}
+.ps .hdr{display:flex;justify-content:space-between;gap:16px;align-items:flex-end;padding-bottom:8px;border-bottom:3px solid #17212e}
+.ps .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 18px;margin-top:10px}
+.ps .grid b{display:block;font-weight:600}
+.ps table{width:100%;border-collapse:collapse}
+.ps th,.ps td{border:1px solid #d5dbe4;padding:4px 6px;text-align:left;vertical-align:top;font-size:11.5px;color:#17212e;white-space:pre-wrap;overflow-wrap:anywhere;text-transform:none;letter-spacing:0}
+.ps th{background:#eef2f7;font-weight:600}
+.ps .kv th{width:30%}
+.ps .done{color:#1f7a4d;font-weight:600}.ps .doing{color:#1d5fa8;font-weight:600}.ps .todo{color:#5b6878}
+.ps .late{color:#b3261e;font-weight:600}
+.ps .sign{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:8px}
+.ps .sign div{border-top:1px solid #17212e;padding-top:4px;margin-top:44px;font-size:11px}
+
+@media (max-width:1100px){.road{grid-template-columns:repeat(3,minmax(0,1fr))}.meta{grid-template-columns:repeat(2,minmax(0,1fr))}.meta .wide{grid-column:1/-1}}
+@media (max-width:860px){.bench{grid-template-columns:minmax(0,1fr)}.kpis{grid-template-columns:repeat(2,1fr)}}
+/* phone: roadmap becomes one row of D0-D8 chips; the selected step's name is the detail heading */
+@media (max-width:560px){
+  .road{grid-template-columns:repeat(9,minmax(0,1fr));gap:4px}
+  .step{align-items:center;padding:7px 0 6px;min-height:44px;border-top-width:3px;gap:4px}
+  .step .hd{flex-direction:column;gap:4px}
+  .step .id{font-size:.8rem}
+  .step .nm,.step .key,.step .ft{display:none}
+  .grid2,.chk,.meta{grid-template-columns:minmax(0,1fr)}
+  #r-title{font-size:1.3rem}
+  .dact{grid-template-columns:auto minmax(0,1fr)}
+  .dact .n{grid-row:auto}
+  .dact select{grid-column:2;grid-row:auto}
+  .dmeta{grid-column:2;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .dmeta .pill{justify-self:start}}
+/* phone: the register becomes one card per report, so the current step and overdue flags stay on screen */
+@media (max-width:640px){
+  .reg thead{display:none}
+  .reg tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"prob prob" "no step" "opened actions" "edited edited";gap:8px 14px;padding:14px 0;border-bottom:1px solid var(--line)}
+  .reg tr:last-child{border-bottom:0}
+  .reg td{padding:0;border:0;min-width:0;display:flex;flex-direction:column;gap:3px;align-items:flex-start}
+  .reg td:nth-child(1){grid-area:no}.reg td:nth-child(2){grid-area:prob}.reg td:nth-child(3){grid-area:step}
+  .reg td:nth-child(4){grid-area:opened}.reg td:nth-child(5){grid-area:actions}.reg td:nth-child(6){grid-area:edited}
+  .reg td[data-label]::before{content:attr(data-label);font-family:var(--body);font-size:.72rem;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+  .reg .ttl{min-width:0;font-size:1.05rem}
+  .reg .pill{white-space:normal}}
+/* phone: each action is a stacked card with visible field labels */
+@media (max-width:640px){
+  .acts thead{display:none}
+  .acts tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"n x" "type type" "text text" "owner due" "status status";gap:8px 10px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .acts tr.none{display:block;border:0}
+  .acts td{padding:0;min-width:0!important;display:flex;flex-direction:column;gap:3px}
+  .acts td[data-label]::before{content:attr(data-label);font-size:.72rem;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+  .acts td.n{grid-area:n;flex-direction:row;align-items:center;width:auto;padding:0;font-weight:600;color:var(--fg)}
+  .acts td.n::before{content:"Action "}
+  .acts td.n{font-size:.95rem}
+  .acts td:nth-child(2){grid-area:type}.acts td:nth-child(3){grid-area:text}.acts td:nth-child(4){grid-area:owner}
+  .acts td:nth-child(5){grid-area:due}.acts td:nth-child(6){grid-area:status}.acts td:nth-child(7){grid-area:x;align-items:flex-end}}
+/* touch: 44px targets */
+@media (pointer:coarse),(max-width:560px){
+  .x,.btn,.seg button{min-height:44px}.x{min-width:44px}
+  .chk label{min-height:44px;align-items:center}.chk input{width:20px;height:20px;margin-top:0}}
+@media (prefers-reduced-motion:no-preference){.step,.btn{transition:border-color .15s,box-shadow .15s}}
+</style>
+
+<div class="wrap">
+  <!-- Register of all reports -->
+  <div class="view" id="v-list">
+    <div class="top">
+      <div class="brand">
+        <h1>8D Register</h1>
+        <span class="note">Your team's 8D reports. Everyone with access sees the same data and can edit together.</span>
+      </div>
+      <div class="tools">
+        <span class="note" id="l-xmsg" role="status"></span>
+        <button class="btn" id="b-xreg" hidden>Export Excel</button>
+        <button class="btn" id="b-newex" hidden>Create example</button>
+        <button class="btn primary" id="b-create" hidden>+ New 8D</button>
+      </div>
+    </div>
+    <div class="banner" id="l-note" hidden></div>
+    <section class="kpis" id="l-kpis"></section>
+    <section class="panel">
+      <div class="filters">
+        <input type="search" id="q" placeholder="Search number, problem, customer, part" aria-label="Search">
+        <div class="seg" role="group" aria-label="Filter by status" id="flt">
+          <button data-flt="all" aria-pressed="true">All</button><button data-flt="open" aria-pressed="false">Open</button><button data-flt="late" aria-pressed="false">Late</button><button data-flt="closed" aria-pressed="false">Closed</button>
+        </div>
+      </div>
+      <div class="tblwrap"><table class="reg"><thead><tr><th>8D no.</th><th>Problem</th><th>Current step</th><th>Opened</th><th>Actions</th><th>Last edited</th></tr></thead><tbody id="l-rows"></tbody></table></div>
+      <div id="l-empty" class="empty" hidden></div>
+    </section>
+  </div>
+
+  <!-- One report -->
+  <div class="view" id="v-report" hidden>
+    <div class="top">
+      <div class="brand">
+        <a href="#list" class="note">← 8D Register</a>
+        <h1 id="r-title">8D Report</h1>
+        <p class="rsub" id="r-sub"></p>
+        <span class="note" id="r-who"></span>
+      </div>
+      <div class="tools">
+        <span class="note" id="r-save"></span>
+        <span class="note" id="r-xmsg" role="status"></span>
+        <button class="btn" id="b-del">Delete</button>
+        <button class="btn" id="b-sum">Text summary</button>
+        <button class="btn" id="b-xlsx" hidden>Export Excel</button>
+        <button class="btn primary" id="b-pdf" hidden>Export PDF</button>
+      </div>
+    </div>
+    <div class="banner" id="r-note" hidden></div>
+    <div class="factbar"><ul class="facts" id="r-facts"></ul><button class="btn" id="b-meta" aria-expanded="false" aria-controls="meta">Edit details</button></div>
+    <section class="panel meta" id="meta" hidden></section>
+    <section class="road" id="road" aria-label="8D roadmap from D0 to D8"></section>
+
+    <section class="panel" id="sumbox" hidden>
+      <div class="sechead"><h2>8D text summary</h2>
+        <div class="tools"><span class="note" id="copymsg"></span><button class="btn" id="b-copy">Copy</button><button class="btn" id="b-sumclose">Close</button></div></div>
+      <textarea id="sumtext" readonly aria-label="8D text summary"></textarea>
+    </section>
+
+    <div class="bench">
+      <section class="panel detail" id="detail"></section>
+      <div class="side">
+        <aside class="panel checks" id="checks" aria-live="polite"></aside>
+        <aside class="panel checks hist" id="hist"></aside>
+      </div>
+    </div>
+
+    <section class="panel">
+      <div class="sechead"><h2>Actions: containment, corrective and preventive</h2><span class="note mono" id="actsum"></span></div>
+      <div class="tblwrap"><table class="acts"><thead><tr><th>ID</th><th>Type</th><th>Action</th><th>Owner</th><th>Due</th><th>Status</th><th></th></tr></thead><tbody id="acts"></tbody></table></div>
+      <button class="btn" id="b-addact" style="margin-top:10px">+ Add action</button>
+    </section>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" hidden><span id="toast-t"></span><button class="btn" id="b-undo">Undo</button></div>
+<div class="busy" id="busy" hidden><div><h2 id="busy-t">Creating file…</h2><span class="note" id="busy-s"></span></div></div>
+<div class="pdfhost" id="pdfhost" aria-hidden="true"></div>
+
+<script>
+const D=[
+ {id:'D0',th:'Prepare',q:'What is the symptom, is an 8D needed, and what emergency response is required now?',
+  fields:[['symptom','Symptom','What the customer sees, in their words'],['era','Emergency response actions','Immediate actions to protect the customer (e.g. stop shipment, sort at customer)']]},
+ {id:'D1',th:'Team',q:'Who has the knowledge, time and authority to solve this problem?',
+  fields:[['notes','Team notes','Meeting rhythm, responsibilities, customer contact']]},
+ {id:'D2',th:'Problem description',q:'What exactly is wrong? Describe it in quantifiable terms (5W2H).',grid:true,
+  fields:[['statement','Problem statement','Object + defect, quantified. No causes, no solutions.',1],['what','What','Part, product, defect'],['where','Where','Where seen, where on the part'],['when','When','First seen, pattern, production dates'],['who','Who','Who found it, which customer or line'],['why','Why is it a problem','Impact on the customer'],['how','How','How was it detected'],['howmany','How many','Quantity affected, trend, PPM']]},
+ {id:'D3',th:'Containment',q:'How do we protect the customer until the permanent fix is in place?',target:1,
+  fields:[['ica','Interim containment','Sorting, 100% inspection, stock quarantine at all locations'],['eff','Effectiveness of containment','Quantities sorted and rejected; how you know no defects escape']]},
+ {id:'D4',th:'Root cause',q:'Why did it occur, and why was it not detected? Verify both.',
+  fields:[['occ','Root cause of occurrence','Why the defect was made'],['esc','Root cause of non-detection (escape)','Why the defect was not caught before shipping'],['ver','Verification','How the root causes were confirmed (turn the problem on and off)']]},
+ {id:'D5',th:'Corrective actions',q:'Which permanent corrective actions remove the root causes? Prove they work.',target:10,
+  fields:[['occ','Corrective action for occurrence','Chosen permanent fix for the occurrence cause'],['esc','Corrective action for escape','Chosen fix for the detection gap'],['ver','Verification before implementation','Trial, test or data showing the actions work without side effects']]},
+ {id:'D6',th:'Implement & validate',q:'Are the corrective actions implemented and effective in production?',
+  fields:[['impl','Implementation','What was implemented, where and when (with first lot or date code)'],['val','Validation results','Production results after implementation; when containment was removed']]},
+ {id:'D7',th:'Prevent recurrence',q:'What changes to systems, standards and similar products prevent this and similar problems?',
+  fields:[['sys','Systemic preventive actions','Management system, standards, design rules, read-across to similar products and processes']]},
+ {id:'D8',th:'Recognize & close',q:'Has the customer accepted the closure? Recognize the team and share the lessons.',target:60,
+  fields:[['close','Closure and customer acceptance','Closure date, customer sign-off'],['learn','Team recognition and lessons learned','What went well, what we would do differently']]}
+];
+const CHK=['PFMEA / DFMEA updated','Control plan updated','Work instructions and SOPs updated','Operators trained on the change','Similar products and processes reviewed (read-across)','Lessons learned recorded'];
+const ROLES=['Champion','Team leader','Member','Customer contact','Supplier contact'];
+const TYPES=['Containment','Corrective: occurrence','Corrective: escape','Preventive (systemic)'];
+const ASTAT=[['open','Open'],['doing','In progress'],['done','Done'],['cancel','Cancelled']];
+const ST={todo:'Not started',doing:'In progress',done:'Complete'};
+const $=id=>document.getElementById(id);
+
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pd=s=>{if(!s||!/^\d{4}-\d{2}-\d{2}$/.test(s))return null;const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const today=()=>{const t=new Date();return new Date(t.getFullYear(),t.getMonth(),t.getDate())};
+const diff=(a,b)=>Math.round((b-a)/864e5);
+const fmt=s=>{const d=pd(s);return d?d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):''};
+const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+const clone=o=>JSON.parse(JSON.stringify(o));
+const str=v=>typeof v==='string'?v:'';
+const plural=(n,w)=>n+' '+w+(n===1?'':'s');
+function rel(t){const d=new Date(t);if(!t||isNaN(d))return'';const m=Math.round((Date.now()-d)/6e4);
+  if(m<1)return'just now';if(m<60)return m+' min ago';if(m<1440)return Math.round(m/60)+' h ago';return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}
+
+/* ---------- report shape ---------- */
+const ACT_ID=/^A-\d{2,6}$/,actId=n=>'A-'+String(n).padStart(2,'0');
+function blank(){const s={meta:{title:'',no:'',opened:iso(today()),customer:'',part:''},d:{},team:[{name:'',role:'Champion',dept:''},{name:'',role:'Team leader',dept:''}],chk:CHK.map(()=>false),actions:[],actSeq:0,log:[]};
+  D.forEach(c=>{s.d[c.id]={status:'todo',key:'',done:'',f:{}};if(c.target!=null)s.d[c.id].target=c.target});return s}
+/* shared data is untrusted: coerce whatever arrives into the shape the page renders */
+function norm(raw){const b=blank(),r=(raw&&typeof raw==='object')?clone(raw):{};
+  const m=(r.meta&&typeof r.meta==='object')?r.meta:{};for(const k in b.meta)b.meta[k]=str(m[k]);
+  D.forEach(c=>{const x=(r.d&&r.d[c.id]&&typeof r.d[c.id]==='object')?r.d[c.id]:{},o=b.d[c.id];
+    o.status=ST[x.status]?x.status:'todo';o.key=str(x.key);o.done=str(x.done);o.prevDone=str(x.prevDone);
+    /* a step completed past open issues carries its own record: when, by whom, and what was open */
+    const ov=x.override&&typeof x.override==='object'?x.override:null;
+    o.override=ov&&str(ov.at)?{at:str(ov.at),by:str(ov.by),issues:(Array.isArray(ov.issues)?ov.issues:[]).filter(s=>typeof s==='string').slice(0,8).map(s=>s.slice(0,300))}:null;
+    if(c.target!=null)o.target=(typeof x.target==='number'&&x.target>=0)?x.target:(x.target===''?'':c.target);
+    c.fields.forEach(([k])=>{o.f[k]=str(x.f&&x.f[k])})});
+  b.team=Array.isArray(r.team)?r.team.filter(t=>t&&typeof t==='object').map(t=>({name:str(t.name),role:ROLES.includes(t.role)?t.role:'Member',dept:str(t.dept)})):[];
+  b.chk=CHK.map((_,i)=>!!(Array.isArray(r.chk)&&r.chk[i]));
+  b.actions=Array.isArray(r.actions)?r.actions.filter(a=>a&&typeof a==='object').map(a=>({id:ACT_ID.test(str(a.id))?a.id:'',type:TYPES.includes(a.type)?a.type:TYPES[1],text:str(a.text),owner:str(a.owner),due:str(a.due),status:ASTAT.some(s=>s[0]===a.status)?a.status:'open'})):[];
+  /* every action keeps one id for life. Older actions, and any duplicate from two people adding at once, are numbered from the high-water mark so a deleted id is never reused */
+  let seq=Math.max(Number.isFinite(r.actSeq)?Math.floor(r.actSeq):0,...b.actions.map(a=>a.id?+a.id.slice(2):0));const seen=new Set();b._ids=false;
+  b.actions.forEach(a=>{if(!a.id||seen.has(a.id)){a.id=actId(++seq);b._ids=true}seen.add(a.id)});b.actSeq=seq;
+  b.log=Array.isArray(r.log)?r.log.filter(l=>l&&typeof l==='object').slice(-30).map(l=>({t:str(l.t),by:str(l.by),m:str(l.m)})):[];
+  b.createdBy=str(r.createdBy);b.createdAt=str(r.createdAt);b.updatedBy=str(r.updatedBy);b.updatedAt=str(r.updatedAt);return b}
+function example(){const s=blank();
+  s.meta={title:'[Example] Terminals pulling out of wire harness during assembly',no:'8D-EX-001',opened:iso(addDays(today(),-43)),customer:'Example customer A',part:'Wire harness WH-4420'};
+  const o=pd(s.meta.opened),dd=n=>iso(addDays(o,n));
+  const set=(id,status,done,key,f)=>Object.assign(s.d[id],{status,done,key,f});
+  set('D0','done',dd(0),'Customer reports terminals pulling out of the wire with a light tug during assembly on line 2.',{symptom:'Terminals come off the wire when the operator pulls lightly while mating the connector on assembly line 2.',era:'Shipments of lots from the last 9 days stopped. Sorting team of 3 at the customer within 4 hours.'});
+  set('D1','done',dd(0),'5 members, led by the QA lead. Daily stand-up at 09:00.',{notes:'Daily stand-up at 09:00 until D5 is complete, then weekly. QA lead is the main customer contact.'});
+  s.team=[{name:'(Example) Plant manager',role:'Champion',dept:'Management'},{name:'(Example) QA lead',role:'Team leader',dept:'Quality assurance'},{name:'(Example) Process engineer',role:'Member',dept:'Engineering'},{name:'(Example) Crimping line supervisor',role:'Member',dept:'Production'},{name:'(Example) Toolmaker',role:'Member',dept:'Maintenance'}];
+  set('D2','done',dd(1),'Terminal pull-out on circuit 7 of WH-4420 from crimp press CR-07: 96 of 12,000 parts (8,000 PPM).',{statement:'Terminal on circuit 7 of wire harness WH-4420 pulls out below 60 N. 96 of 12,000 parts affected (8,000 PPM).',what:'Wire harness WH-4420, terminal separates from the wire',where:'Customer assembly line 2, circuit 7 only, crimped on press CR-07. Not found on parts from CR-05 or CR-06.',when:'Parts crimped after the applicator change. Not found in earlier lots.',who:'Customer assembly operators',why:'Customer line stopped for 2 hours; risk of open circuit in the vehicle',how:'Found when pulling the wire while mating the connector',howmany:'96 of 12,000 parts = 8,000 PPM'});
+  set('D3','done',dd(1),'100% pull test of all stock, 31,500 parts. Press CR-07 stopped.',{ica:'100% pull test of stock at the plant, warehouse, in transit and at the customer. CR-07 stopped and work moved to CR-05.',eff:'31,500 parts tested, 212 rejected. Green label on every passed box. No further defects found at the customer.'});
+  set('D4','done',dd(7),'Crimp height 0.08 mm over nominal after the applicator change; no check after tool change.',{occ:'Crimp height on CR-07 is 0.08 mm above nominal after the applicator change, because the tool-change procedure does not require re-setting and measuring.',esc:'Control plan measures crimp height only at shift start. No measurement after a tool change and no in-process pull test.',ver:'Setting crimp height 0.08 mm high again gives a mean pull force of 38 N; back at nominal it gives 85 N (spec ≥ 60 N). Repeated 3 times with the same result.'});
+  set('D5','done',dd(9),'Crimp height and pull test after every tool change. Crimp force monitor to be installed.',{occ:'Applicator change procedure revised: set up and measure crimp height on the first 5 parts before release.',esc:'Pull test of 5 parts after each tool change and every 2 hours. Crimp force monitor on CR-07.',ver:'Trial run of 2,000 parts: zero defects, minimum pull force 79 N, no change in cycle time.'});
+  set('D6','doing','','New procedure and pull test live. Waiting for crimp force monitor installation.',{impl:'New tool-change procedure and pull test in use. Crimp force monitor waiting for the supplier to install.',val:'48,000 parts produced since the fix with zero defects. 100% pull test stays in place until the monitor is installed.'});
+  set('D7','todo','','Roll out the tool-change procedure to all 9 crimp presses.',{sys:'Roll out the tool-change procedure and pull test to all 9 crimp presses. Add it to the control plan template for crimping.'});
+  s.chk=[true,true,false,false,false,false];
+  s.actions=[
+   {id:'A-01',type:TYPES[0],text:'100% pull test of all stock',owner:'QA',due:dd(1),status:'done'},
+   {id:'A-02',type:TYPES[0],text:'Stop CR-07 and move work to CR-05',owner:'Production',due:dd(1),status:'done'},
+   {id:'A-03',type:TYPES[1],text:'Revise applicator change procedure to measure crimp height before release',owner:'Engineering',due:dd(10),status:'done'},
+   {id:'A-04',type:TYPES[2],text:'Add pull test to control plan and work instruction',owner:'QA',due:dd(10),status:'done'},
+   {id:'A-05',type:TYPES[2],text:'Install crimp force monitor on CR-07',owner:'Maintenance',due:dd(34),status:'doing'},
+   {id:'A-06',type:TYPES[3],text:'Read-across to all 9 crimp presses',owner:'Engineering',due:dd(54),status:'open'}];
+  s.actSeq=6;
+  return s}
+
+/* ---------- derived facts (take a report, not a global) ---------- */
+function tgt(r,c){const x=r.d[c.id],o=pd(r.meta.opened);if(x.target===''||x.target==null||!o)return null;
+  const due=addDays(o,Number(x.target));const late=x.status==='done'&&x.done&&pd(x.done)?pd(x.done)>due:x.status!=='done'&&today()>due;return{due,late,days:Number(x.target)}}
+const overdue=a=>(a.status==='open'||a.status==='doing')&&pd(a.due)&&pd(a.due)<today();
+/* a row with no description is still being typed: it raises no findings and is not counted yet */
+const blankA=a=>!a.text.trim();
+function facts(r){const cur=D.find(c=>r.d[c.id].status!=='done'),o=pd(r.meta.opened);
+  const end=(!cur&&pd(r.d.D8.done))?pd(r.d.D8.done):today();
+  const real=r.actions.filter(a=>!blankA(a)),live=real.filter(a=>a.status!=='cancel');
+  return{cur,nd:D.filter(c=>r.d[c.id].status==='done').length,days:o?Math.max(0,diff(o,end)):null,
+    live:live.length,dn:live.filter(a=>a.status==='done').length,ov:real.filter(overdue).length,openA:real.filter(a=>a.status==='open'||a.status==='doing').length,
+    lateT:D.some(c=>{const t=tgt(r,c);return t&&t.late&&r.d[c.id].status!=='done'})}}
+
+/* ---------- shared state ---------- */
+let db=null,user=null,dl=null,myId=null,RO=false,loaded=false,dbState='loading';
+let reports={};            // id -> normalized report
+let openId=null,S=null,sel=0,flt='all',gate=null;
+const pending=new Set();   // paths edited locally and not yet sent
+let flushT=null,chain=Promise.resolve(),writing=0;
+
+const getP=p=>p.split('.').reduce((o,k)=>o==null?o:o[k],S);
+function setP(p,v){const ks=p.split('.');const l=ks.pop();ks.reduce((o,k)=>o[k],S)[l]=v}
+const ARR={team:1,actions:1,chk:1,log:1};
+function touch(p){pending.add(ARR[p.split('.')[0]]?p.split('.')[0]:p);saveNote('Saving…');clearTimeout(flushT);flushT=setTimeout(flush,700)}
+function buildPatch(){const patch={};pending.forEach(p=>{const ks=p.split('.');if(ks.length===1){patch[p]=clone(S[p]);return}
+    let o=patch;ks.slice(0,-1).forEach(k=>{o=o[k]=o[k]||{}});o[ks[ks.length-1]]=getP(p)});pending.clear();return patch}
+/* A write that fails for a passing reason (network, store busy) never drops the edit: the paths go back in the queue
+   and are sent again with a growing wait. The values are re-read from the page at send time, so newer typing is not overwritten. */
+let retryN=0;const RETRY=[1500,4000,8000,15000,30000];
+function flush(){clearTimeout(flushT);if(!pending.size||!db||!openId||!S)return;
+  const sent=[...pending],id=openId,patch=buildPatch();patch.updatedBy=myId||'';patch.updatedAt=new Date().toISOString();
+  S.updatedBy=patch.updatedBy;S.updatedAt=patch.updatedAt;
+  const ref=db.collection('reports').doc(id);writing++;
+  chain=chain.then(()=>ref.update(patch)).then(()=>{writing--;retryN=0;
+    if(id===openId){if(!pending.size)banner('r-note','');if(!writing&&!pending.size)saveNote('Saved')}},e=>{writing--;
+    const c=e&&e.code;
+    if(c==='invalid_argument'){RO=true;lock();saveNote('');banner('r-note','Changes could not be saved. You may have view-only access, or this report was deleted.');return}
+    if(id===openId&&S)sent.forEach(p=>pending.add(p));
+    else if(c!=='quota_exceeded')retryApart(id,patch,0);
+    if(c==='quota_exceeded'){saveNote('Not saved');banner('r-note','Storage is full, so your last changes are not saved yet. Delete old reports you no longer need; the next edit will try again.');return}
+    if(id!==openId)return;
+    const wait=RETRY[Math.min(retryN++,RETRY.length-1)];
+    saveNote('Not saved yet');banner('r-note',`Your changes are not saved yet. They stay on this screen and the page will keep trying${retryN>3?'. If this lasts, check your connection before closing the page':''}.`);
+    clearTimeout(flushT);flushT=setTimeout(flush,wait)})}
+/* the person left the report before the write failed: keep trying that patch on its own */
+function retryApart(id,patch,n){if(n>=RETRY.length)return;
+  setTimeout(()=>{chain=chain.then(()=>db.collection('reports').doc(id).update(patch)).then(()=>{},e=>{if(!(e&&(e.code==='invalid_argument'||e.code==='quota_exceeded')))retryApart(id,patch,n+1)})},RETRY[n])}
+addEventListener('online',()=>{if(pending.size){retryN=0;flush()}});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')flush()});
+function saveNote(t){$('r-save').textContent=t}
+function banner(id,t){const b=$(id);b.textContent=t;b.hidden=!t}
+function logEv(m){S.log.push({t:new Date().toISOString(),by:myId||'',m});S.log=S.log.slice(-30);touch('log')}
+
+/* ---------- names: store ids only, resolve at render ---------- */
+const uid=id=>id?`<span data-uid="${esc(id)}">Someone</span>`:'<span>Someone</span>';
+async function fillNames(){if(!user)return;const els=[...document.querySelectorAll('[data-uid]')];if(!els.length)return;
+  const ps=await user.profiles([...new Set(els.map(e=>e.dataset.uid))]);
+  els.forEach(e=>{const p=ps[e.dataset.uid];e.textContent=p?(p.isMe?(p.name||'You')+' (you)':(p.name||'Someone')):'Someone'})}
+
+/* ---------- register view ---------- */
+function rList(){
+  const all=Object.entries(reports).map(([id,r])=>({id,r,f:facts(r)}));
+  const nOpen=all.filter(x=>x.f.cur).length,nLate=all.filter(x=>(x.f.cur&&x.f.lateT)||x.f.ov).length;
+  $('l-kpis').innerHTML=[['Total',all.length,'reports'],['Open',nOpen,'not yet closed'],['Late',nLate,'past target or overdue actions',nLate?'t-bad':''],['Closed',all.length-nOpen,'D0 to D8 complete']]
+    .map(([l,v,s,c])=>`<div class="kpi"><span class="lbl">${l}</span><b class="mono ${c||''}">${loaded?v:'–'}</b><span class="sub muted">${s}</span></div>`).join('');
+  const q=$('q').value.trim().toLowerCase();
+  const rows=all.filter(x=>flt==='all'||(flt==='open'&&x.f.cur)||(flt==='closed'&&!x.f.cur)||(flt==='late'&&((x.f.cur&&x.f.lateT)||x.f.ov)))
+    .filter(x=>!q||[x.r.meta.no,x.r.meta.title,x.r.meta.customer,x.r.meta.part].join(' ').toLowerCase().includes(q))
+    .sort((a,b)=>(b.r.updatedAt||'').localeCompare(a.r.updatedAt||''));
+  $('l-rows').innerHTML=rows.map(({id,r,f})=>`<tr>
+    <td class="mono" data-label="8D no.">${esc(r.meta.no)||'–'}</td>
+    <td><a class="ttl" href="#r-${esc(id)}">${esc(r.meta.title)||'(Untitled)'}</a><span class="subl">${esc([r.meta.customer,r.meta.part].filter(Boolean).join(' · '))}</span></td>
+    <td data-label="Current step">${f.cur?`<span class="pill info">${f.cur.id} ${esc(f.cur.th)}</span>`:f.openA?`<span class="pill warn">Closed, ${plural(f.openA,'action')} open</span>`:'<span class="pill ok">Closed</span>'}${f.lateT?' <span class="pill bad">Past target</span>':''}
+      <div class="prog" title="${f.nd} of 9 complete">${D.map(c=>`<i class="${r.d[c.id].status}"></i>`).join('')}</div></td>
+    <td data-label="Opened"><span class="mono">${esc(fmt(r.meta.opened))||'–'}</span><span class="subl">${f.days==null?'':plural(f.days,'day')}</span></td>
+    <td data-label="Actions"><span><span class="mono">${f.dn}/${f.live}</span>${f.ov?` <span class="pill bad">${f.ov} overdue</span>`:''}</span></td>
+    <td data-label="Last edited"><span>${uid(r.updatedBy||r.createdBy)}</span><span class="subl">${esc(rel(r.updatedAt||r.createdAt))}</span></td></tr>`).join('');
+  const e=$('l-empty');let msg='';
+  if(dbState==='none')msg='<h2>Shared data is not available here</h2><p>Open this page in claude.ai while signed in to see and edit your team\'s 8D reports.</p>';
+  else if(dbState==='error')msg='<h2>Reports could not be loaded</h2><p>The connection to the data store was lost. Reload this page to try again.</p>';
+  else if(!loaded&&!all.length)msg='<p>Loading your team\'s 8D reports…</p>';
+  else if(!all.length)msg='<h2>No 8D reports yet</h2><p>Reports your team opens appear here with their current step, days open and overdue actions.'+(RO?'':' Select "New 8D" to start the first one, or create an example to see a filled-in report.')+'</p>';
+  else if(!rows.length)msg='<p>No reports match the search or filter.</p>';
+  e.innerHTML=msg;e.hidden=!msg;
+  const can=db&&!RO;$('b-create').hidden=!can;$('b-newex').hidden=!can;$('b-xreg').hidden=!dl||!all.length;
+  fillNames()}
+
+/* ---------- report view ---------- */
+const fid=p=>'f-'+p.replace(/\./g,'-');
+const tx=(p,ph,rows)=>`<textarea id="${fid(p)}" data-b="${p}" rows="${rows||2}" placeholder="${esc(ph)}">${esc(getP(p))}</textarea>`;
+const inp=(p,type,ph,extra)=>`<input type="${type}" id="${fid(p)}" data-b="${p}" value="${esc(getP(p))}" placeholder="${esc(ph||'')}" ${extra||''}>`;
+const fld=(p,label,ctl)=>`<div class="field"><label class="lbl" for="${fid(p)}">${esc(label)}</label>${ctl}</div>`;
+const sl=(p,opts,lab)=>`<select id="${fid(p)}" data-b="${p}" data-r="1" aria-label="${lab}">${opts.map(o=>{const[v,t]=Array.isArray(o)?o:[o,o];return`<option value="${esc(v)}"${getP(p)===v?' selected':''}>${esc(t)}</option>`}).join('')}</select>`;
+
+function rMeta(){$('meta').innerHTML=
+  `<div class="wide" style="display:contents">`+fld('meta.title','Problem title',inp('meta.title','text','e.g. Terminals pulling out during assembly'))+`</div>`+
+  fld('meta.no','8D number',inp('meta.no','text','8D-2026-001'))+fld('meta.opened','Opened',inp('meta.opened','date'))+
+  fld('meta.customer','Customer',inp('meta.customer','text',''))+fld('meta.part','Part / product',inp('meta.part','text',''))}
+
+/* the report's identity: the problem is the heading; number, customer and part under it; edits fold away */
+let metaOpen=false;
+function rHead(){const m=S.meta;
+  $('r-title').textContent=m.title.trim()||'Untitled 8D';
+  $('r-sub').innerHTML=[m.no?`<span class="mono">${esc(m.no)}</span>`:'',esc(m.customer),esc(m.part)].filter(Boolean).join(' · ')||'<span class="muted">No 8D number, customer or part yet</span>';
+  $('meta').hidden=!metaOpen;const b=$('b-meta');b.setAttribute('aria-expanded',metaOpen);b.textContent=metaOpen?'Done editing':(RO?'Show details':'Edit details')}
+function rLight(){const f=facts(S),o=pd(S.meta.opened);
+  $('r-facts').innerHTML=
+   `<li>${f.cur?`<span class="pill info">${f.cur.id} ${esc(f.cur.th)}</span>`:f.openA?`<span class="pill warn">Closed, ${plural(f.openA,'action')} open</span>`:'<span class="pill ok">Closed</span>'}</li>`+
+   `<li>Opened <b>${esc(fmt(S.meta.opened))||'–'}</b>${f.days==null?'':` · day <b class="mono">${f.days}</b>`}</li>`+
+   `<li><b class="mono">${f.nd}/9</b> disciplines complete</li>`+
+   `<li><b class="mono">${f.dn}/${f.live}</b> actions done${f.ov?` <span class="pill bad">${f.ov} overdue</span>`:''}</li>`+
+   (n=>n?`<li><button class="issuelink" data-jump="checks">${plural(n,'issue')} to review</button></li>`:'')(issuesOf(checksFor(S)).length);
+  $('actsum').textContent=`${plural(S.actions.length,'action')} · ${f.dn} done`+(f.ov?` · ${f.ov} overdue`:'');
+  $('road').innerHTML=D.map((c,i)=>{const x=S.d[c.id],t=tgt(S,c);let ft='';
+    if(x.status==='done'&&pd(x.done))ft=`<span class="${t&&t.late?'t-bad':'t-ok'}">Completed ${esc(fmt(x.done))}${o?` (day ${diff(o,pd(x.done))})`:''}${t&&t.late?', late':''}</span>`;
+    else if(t)ft=`<span class="${t.late?'t-bad':'muted'}">Target: day ${t.days} (${esc(fmt(iso(t.due)))})${t.late?', overdue':''}</span>`;
+    if(c.id==='D7'&&x.status!=='done')ft+=`<span class="muted">${ft?' · ':''}Checklist ${S.chk.filter(Boolean).length}/6</span>`;
+    const ovr=x.status==='done'&&x.override;
+    if(ovr)ft+=`<span class="t-warn"> · Forced with ${plural(x.override.issues.length||1,'open issue')}</span>`;
+    const stateTxt=ovr?'complete, forced with open issues':ST[x.status].toLowerCase();
+    return`<button class="step ${x.status}${ovr?' ovr':''}${i===sel?' sel':''}" data-step="${i}" aria-pressed="${i===sel}" aria-label="${c.id} ${esc(c.th)}, ${stateTxt}"><span class="hd"><span class="id">${c.id}</span><span class="dot" aria-hidden="true" title="${ovr?'Completed with open issues (forced)':ST[x.status]}">${x.status==='done'?(ovr?'!':'✓'):''}</span></span><span class="nm">${esc(c.th)}</span><span class="key">${esc(x.key)||'<i>No key point yet</i>'}</span><span class="ft">${ft}</span></button>`}).join('');
+  rChecks()}
+
+const CLAB={bad:'Fix',warn:'Check',info:'Tip',ovr:'Forced'};
+/* a finding is [level, step, text, go, nogate]; go is "s<n>" for discipline n or "a<i>" for action row i */
+const CHEV='<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg>';
+const findBtn=([lv,id,t,go])=>`<button class="find" data-go="${go}"><span class="pill ${lv}">${id} · ${CLAB[lv]}</span><span>${esc(t)}</span>${CHEV}</button>`;
+/* the panel is a live region, so it is rewritten only when the list of findings really changes, not on every keystroke */
+let lastChecks='';
+const issuesOf=w=>w.filter(f=>f[0]==='bad'||f[0]==='warn');
+function rChecks(){const w=checksFor(S),sig=openId+'|'+JSON.stringify(w);if(sig===lastChecks)return;lastChecks=sig;
+  $('checks').innerHTML=`<h2 id="chk-h" tabindex="-1">8D quality check</h2><p class="note" style="margin:0">Common 8D mistakes, checked as you fill in the report. Select one to go to it.</p>`+
+   (w.length?`<ul>${w.map(f=>`<li>${findBtn(f)}</li>`).join('')}</ul>`:`<p style="margin:0"><span class="pill ok">Pass</span> No common mistakes found.</p>`)}
+const isOpen=a=>a.status==='open'||a.status==='doing';
+const actName=a=>`${a.id} "${a.text.trim()||'no description'}"`;
+/* a new action: its id comes from a counter that only goes up, so a removed id is never given to another action */
+function newAction(type){const seq=Math.max(S.actSeq||0,...S.actions.map(a=>+a.id.slice(2)))+1;S.actSeq=seq;touch('actSeq');
+  const a={id:actId(seq),type:TYPES.includes(type)?type:TYPES[1],text:'',owner:'',due:'',status:'open'};S.actions.push(a);touch('actions');return a}
+const actState=a=>overdue(a)?`overdue since ${fmt(a.due)}`:a.status==='doing'?'in progress':'open';
+function checksFor(S){const w=[],d=S.d,add=(lv,id,t,go,nogate)=>w.push([lv,id,t,go||(/^D\d$/.test(id)?'s'+id.slice(1):''),!!nogate]);
+  if(d.D1.status!=='todo'){
+    if(!S.team.some(m=>m.role==='Champion'&&m.name.trim()))add('warn','D1','The team has no Champion.');
+    if(!S.team.some(m=>m.role==='Team leader'&&m.name.trim()))add('warn','D1','The team has no Team leader.');}
+  if(d.D2.status!=='todo'&&!/\d/.test(d.D2.f.statement))add('warn','D2','The problem statement has no numbers. Add the quantity or PPM.');
+  if(d.D2.status!=='todo'&&!/\bnot\b|ไม่พบ|ไม่เกิด/i.test(d.D2.f.where+d.D2.f.when))add('info','D2','Also say where or when the problem does not occur (Is / Is Not).');
+  if(/operator error|human error|operator mistake|careless|not careful|พนักงาน(ทำ)?ผิดพลาด|ประมาท/i.test(d.D4.f.occ))add('bad','D4','The root cause blames the operator. Ask why the process allowed the error, and consider poka-yoke.');
+  if(d.D4.status!=='todo'&&!d.D4.f.esc.trim())add('bad','D4','No root cause of escape (non-detection) yet.');
+  if(d.D4.status==='done'&&!d.D4.f.ver.trim())add('bad','D4','D4 is complete but the root causes are not verified.');
+  if(d.D5.status!=='todo'&&!d.D5.f.esc.trim())add('warn','D5','No corrective action for the escape yet.');
+  if(d.D5.status==='done'&&!d.D5.f.ver.trim())add('bad','D5','D5 is complete without evidence that the actions work.');
+  /* closure rules: a discipline is not complete while the actions that prove it are still open */
+  const flagged=new Set();
+  S.actions.forEach((a,i)=>{if(!isOpen(a)||blankA(a))return;
+    if(d.D8.status==='done'){add('bad','D8',`The 8D is closed but action ${actName(a)} is still ${actState(a)}.`,'a'+i);flagged.add(i);return}
+    if(d.D6.status==='done'&&(a.type===TYPES[1]||a.type===TYPES[2])){add('bad','D6',`D6 is complete but corrective action ${actName(a)} is still ${actState(a)}.`,'a'+i);flagged.add(i);return}
+    if(d.D6.status==='done'&&a.type===TYPES[0]){add('warn','D6',`D6 is complete but containment action ${actName(a)} is still ${actState(a)}. Remove containment only after validation.`,'a'+i);flagged.add(i);return}
+    if(d.D7.status==='done'&&a.type===TYPES[3]){add('bad','D7',`D7 is complete but preventive action ${actName(a)} is still ${actState(a)}.`,'a'+i);flagged.add(i)}});
+  /* the record stays after the issues are fixed: it says the step was once forced, which a reviewer may ask about */
+  D.forEach(c=>{const x=d[c.id];if(x.status==='done'&&x.override)add('ovr',c.id,`${c.id} was completed on ${fmt(x.override.at.slice(0,10))} with ${plural(x.override.issues.length||1,'open issue')} (forced).`,'',true)});
+  const nc=S.chk.filter(Boolean).length;
+  if((d.D7.status==='done'||d.D8.status!=='todo')&&nc<6)add('bad','D7',`Prevent-recurrence checklist is ${nc}/6. Do not close before it is complete.`);
+  D.forEach(c=>{const t=tgt(S,c);if(t&&t.late)add('bad',c.id,S.d[c.id].status==='done'?`Completed later than the day ${t.days} target.`:`Past the day ${t.days} target.`,'',true)});
+  S.actions.forEach((a,i)=>{if(overdue(a)&&!blankA(a)&&!flagged.has(i))add('bad','Action',`Action ${actName(a)} is overdue since ${fmt(a.due)}.`,'a'+i)});
+  return w}
+/* what completing this discipline would leave unresolved (lateness is a fact, not a reason to stop) */
+function gateFor(id){const t=clone(S);t.d[id].status='done';t.d[id].override=null;if(!t.d[id].done)t.d[id].done=iso(today());
+  return checksFor(t).filter(f=>f[1]===id&&(f[0]==='bad'||f[0]==='warn')&&!f[4])}
+
+function rHist(){const L=S.log.slice().reverse();
+  $('hist').innerHTML=`<h2>History</h2>`+(L.length?`<ul>${L.slice(0,12).map(l=>`<li><span>${esc(l.m)}</span><span class="when">${uid(l.by)} · ${esc(rel(l.t))}</span></li>`).join('')}</ul>`:`<p class="note" style="margin:0">Status changes to disciplines and actions are recorded here with who made them.</p>`);
+  $('r-who').innerHTML=`Opened by ${uid(S.createdBy)} · last edited by ${uid(S.updatedBy||S.createdBy)} ${esc(rel(S.updatedAt||S.createdAt))}`}
+
+function rDetail(){const c=D[sel],p='d.'+c.id,x=S.d[c.id];
+  let h=`<div class="dhead"><h2 id="d-h" tabindex="-1"><span class="mono">${c.id}</span> · ${esc(c.th)}</h2>
+   <div class="seg" role="group" aria-label="Status">${Object.entries(ST).map(([k,t])=>`<button data-st="${k}" aria-pressed="${x.status===k}">${t}</button>`).join('')}</div></div>`+
+   (gate&&gate.step===c.id?`<div class="gate" role="alert"><p>Before ${c.id} is complete, ${gate.items.length===1?'1 thing needs':gate.items.length+' things need'} attention:</p>
+     <ul>${gate.items.map(f=>`<li>${findBtn(f)}</li>`).join('')}</ul>
+     <div class="tools"><button class="btn primary" data-gate="keep">Keep ${esc(ST[x.status].toLowerCase())}</button><button class="btn" data-gate="go">Complete anyway</button></div></div>`:'')+
+   (x.status==='done'&&x.override?`<div class="ovrnote"><span><b>Completed with ${plural(x.override.issues.length||1,'open issue')} (forced)</b> on ${esc(fmt(x.override.at.slice(0,10)))} by ${uid(x.override.by)}. Open at that time:</span>
+     <ul>${x.override.issues.map(s=>`<li>${esc(s)}</li>`).join('')}</ul></div>`:'')+
+   `<p class="q">${esc(c.q)}</p>`+fld(p+'.key','Key point (shown on the roadmap)',tx(p+'.key','The main point of this discipline in one or two lines',2));
+  if(c.id==='D1')h+=`<div class="tblwrap"><table class="team"><thead><tr><th>Name</th><th>Role</th><th>Department / function</th><th></th></tr></thead><tbody>${S.team.map((m,i)=>`<tr><td>${inp('team.'+i+'.name','text','Name','aria-label="Name"')}</td><td>${sl('team.'+i+'.role',ROLES,'Role')}</td><td>${inp('team.'+i+'.dept','text','Department, expertise','aria-label="Department"')}</td><td><button class="x" data-delteam="${i}" aria-label="Remove team member">✕</button></td></tr>`).join('')}</tbody></table></div><div><button class="btn" id="b-addteam">+ Add team member</button></div>`;
+  const fs=c.fields.map(([k,l,ph,wide])=>`<div class="field"${wide?' style="grid-column:1/-1"':''}><label class="lbl" for="${fid(p+'.f.'+k)}">${esc(l)}</label>${tx(p+'.f.'+k,ph,c.grid&&!wide?2:3)}</div>`).join('');
+  h+=c.grid?`<div class="grid2">${fs}</div>`:fs;
+  if(c.id==='D7')h+=`<div class="field"><span class="lbl">Prevent recurrence checklist</span><ul class="chk">${CHK.map((t,i)=>`<li><label><input type="checkbox" id="f-chk-${i}" data-b="chk.${i}"${S.chk[i]?' checked':''}><span>${esc(t)}</span></label></li>`).join('')}</ul></div>`;
+  if(DACT[c.id])h+=dActs(DACT[c.id]);
+  h+=`<div class="row">`+fld(p+'.done','Completed on',inp(p+'.done','date'))+(c.target!=null?fld(p+'.target','Target (days from opening)',inp(p+'.target','number','','min="0"')):'')+`</div>`+
+    (x.status!=='done'&&pd(x.prevDone)?`<p class="note" style="margin:0">Previously completed ${esc(fmt(x.prevDone))}. That date comes back if you complete this step again.</p>`:'');
+  $('detail').innerHTML=h}
+
+/* the actions that prove a discipline, shown inside it; owner and due date stay in the full table */
+const DACT={D3:{types:[TYPES[0]],add:TYPES[0],label:'Containment actions',noun:'containment action'},
+  D5:{types:[TYPES[1],TYPES[2]],add:TYPES[1],label:'Corrective actions',noun:'corrective action'},
+  D6:{types:[TYPES[1],TYPES[2]],add:TYPES[1],label:'Corrective actions to validate',noun:'corrective action'},
+  D7:{types:[TYPES[3]],add:TYPES[3],label:'Preventive actions',noun:'preventive action'}};
+const dfid=p=>'d-'+fid(p);
+function dActs(g){const rows=S.actions.map((a,i)=>[a,i]).filter(([a])=>g.types.includes(a.type));
+  return`<div class="field"><span class="lbl">${g.label} (${rows.length})</span>`+
+   (rows.length?`<ul class="dacts">${rows.map(([a,i])=>{const p='actions.'+i;
+     return`<li class="dact"><span class="n mono">${esc(a.id)}</span>
+       <textarea class="grow" id="${dfid(p+'.text')}" data-b="${p}.text" rows="1" placeholder="What needs to be done" aria-label="Action ${esc(a.id)}">${esc(a.text)}</textarea>
+       <select id="${dfid(p+'.status')}" data-b="${p}.status" data-r="1" aria-label="Status of action ${esc(a.id)}">${ASTAT.map(([v,t])=>`<option value="${v}"${a.status===v?' selected':''}>${t}</option>`).join('')}</select>
+       <div class="dmeta"><input type="text" id="${dfid(p+'.owner')}" data-b="${p}.owner" value="${esc(a.owner)}" placeholder="Owner" aria-label="Owner of action ${esc(a.id)}">
+         <input type="date" id="${dfid(p+'.due')}" data-b="${p}.due" data-r="1" value="${esc(a.due)}" aria-label="Due date of action ${esc(a.id)}">${overdue(a)&&!blankA(a)?'<span class="pill bad">Overdue</span>':''}</div></li>`}).join('')}</ul>`
+   :`<p class="note" style="margin:0">No ${g.noun}s yet.</p>`)+
+   `<div><button class="btn" data-addtype="${esc(g.add)}">+ Add ${g.noun}</button></div></div>`}
+/* re-render the places that show actions, keeping the focused field (and its caret) where it was */
+function refreshActs(){const a=document.activeElement,id=a&&a.id,ss=a&&a.selectionStart,se=a&&a.selectionEnd;
+  rActs();if(DACT[D[sel].id])rDetail();lock();
+  if(id&&/^(d-)?f-/.test(id)){const n=$(id);if(n){n.focus({preventScroll:true});try{n.setSelectionRange(ss,se)}catch(e){}}}}
+const focusId=id=>{const n=$(id);if(n)n.focus()};
+const focusStatus=()=>{const b=document.querySelector(`[data-st="${S&&S.d[D[sel].id].status}"]`);if(b)b.focus({preventScroll:true})};
+
+function rActs(){$('acts').innerHTML=S.actions.map((a,i)=>{const p='actions.'+i;
+  return`<tr id="arow-${i}"><td class="n">${esc(a.id)}</td><td data-label="Type">${sl(p+'.type',TYPES,'Type')}</td><td data-label="Action"><textarea class="grow" id="${fid(p+'.text')}" data-b="${p}.text" rows="1" placeholder="What needs to be done" aria-label="Action ${esc(a.id)}">${esc(a.text)}</textarea></td><td data-label="Owner">${inp(p+'.owner','text','Name','aria-label="Owner"')}</td><td data-label="Due">${inp(p+'.due','date','','aria-label="Due" data-r="1"')}${overdue(a)?'<span class="pill bad" style="margin-top:4px;align-self:flex-start">Overdue</span>':''}</td><td data-label="Status">${sl(p+'.status',ASTAT,'Status')}</td><td><button class="x" data-delact="${i}" aria-label="Remove action">✕</button></td></tr>`}).join('')||`<tr class="none"><td colspan="7" class="muted" style="padding:12px 6px;text-transform:none">No actions yet. Select "Add action" to start.</td></tr>`}
+
+function lock(){growAll();if(!RO)return;document.querySelectorAll('#v-report input,#v-report textarea:not(#sumtext),#v-report select,#v-report [data-st],#v-report [data-addtype],#v-report .x,#b-addact,#b-addteam,#b-del').forEach(e=>{e.disabled=true})}
+/* full redraw that keeps the caret where the person is typing */
+function rReport(){const a=document.activeElement,id=a&&a.id,ss=a&&a.selectionStart,se=a&&a.selectionEnd;
+  rMeta();rHead();rDetail();rActs();rLight();rHist();lock();fillNames();
+  if(id&&/^(d-)?f-/.test(id)){const n=$(id);if(n){n.focus();try{n.setSelectionRange(ss,se)}catch(e){}}}}
+
+/* ---------- export: Excel (SheetJS) and PDF (html2canvas + jsPDF, so any script the team types renders with the page's own fonts) ---------- */
+const LIBS={xlsx:['https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js','XLSX'],
+  h2c:['https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js','html2canvas'],
+  pdf:['https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js','jspdf']};
+const libP={};
+function lib(k){const[src,g]=LIBS[k];if(window[g])return Promise.resolve();
+  return libP[k]=libP[k]||new Promise((ok,no)=>{const s=document.createElement('script');s.src=src;s.onload=()=>window[g]?ok():no();s.onerror=()=>{delete libP[k];no(new Error('lib'))};document.head.appendChild(s)})}
+const fileSafe=s=>String(s).replace(/[\\/:*?"<>|\u0000-\u001f]+/g,' ').replace(/\s+/g,' ').trim().slice(0,90)||'8D';
+const stamp=()=>iso(today());
+async function nameMap(ids){const m={};ids=[...new Set(ids.filter(Boolean))];if(!ids.length)return m;
+  if(user){try{const ps=await user.profiles(ids);ids.forEach(i=>{m[i]=(ps[i]&&ps[i].name)||'Someone'})}catch(e){}}
+  ids.forEach(i=>{if(!m[i])m[i]='Someone'});return m}
+function busy(on,t,s){$('busy').hidden=!on;if(t)$('busy-t').textContent=t;$('busy-s').textContent=s||''}
+async function offer(filename,data,msgEl){
+  try{await dl.save({filename,data});msgEl.textContent='File sent'}
+  catch(e){const c=e&&e.code;msgEl.textContent=c==='declined'?'Download cancelled':c==='rate_limited'?'A download prompt is already open. Try again in a moment.':
+    c==='host_unavailable'?'This app cannot save files. Open the page in a browser on a computer.':c==='extension_not_enabled'?'This file type is not available here.':'The file could not be saved.'}}
+
+/* Excel: real date cells, readable column widths */
+const SERIAL0=Date.UTC(1899,11,30);
+function sheet(rows,widths){const ws=XLSX.utils.aoa_to_sheet(rows);
+  for(const k in ws){if(k[0]==='!')continue;const c=ws[k];
+    if(c.t==='s'&&/^\d{4}-\d{2}-\d{2}$/.test(c.v)){const[y,m,d]=c.v.split('-').map(Number);c.t='n';c.v=(Date.UTC(y,m-1,d)-SERIAL0)/864e5;c.z='yyyy-mm-dd';delete c.w}}
+  ws['!cols']=widths.map(w=>({wch:w}));return ws}
+const stName=s=>ST[s]||s;
+async function xlsxReport(r){await lib('xlsx');const f=facts(r),m=r.meta,wb=XLSX.utils.book_new();
+  const nm=await nameMap([r.createdBy,r.updatedBy,...r.log.map(l=>l.by)]);
+  const sum=[['8D report',m.title],['8D number',m.no],['Customer',m.customer],['Part / product',m.part],['Opened',m.opened],
+    ['Days open',f.days],['Current step',f.cur?f.cur.id+' '+f.cur.th:'Closed'],['Disciplines complete',f.nd+'/9'],['Actions done',f.dn+'/'+f.live],['Actions overdue',f.ov],
+    ['Opened by',nm[r.createdBy]||''],['Last edited by',nm[r.updatedBy||r.createdBy]||''],['Exported',stamp()],[],
+    ['Step','Discipline','Status','Completed on','Target (days)','Target date','Late','Forced complete','Open at that time','Key point']];
+  D.forEach(c=>{const x=r.d[c.id],t=tgt(r,c),ov=x.status==='done'&&x.override;sum.push([c.id,c.th,stName(x.status),x.done,t?t.days:'',t?iso(t.due):'',t&&t.late?'Yes':'',ov?'Yes':'',ov?x.override.issues.join(' | '):'',x.key])});
+  XLSX.utils.book_append_sheet(wb,sheet(sum,[20,40,13,13,13,13,7,10,50,70]),'Summary');
+  const det=[['Step','Discipline','Field','Content']];
+  D.forEach(c=>{const x=r.d[c.id];det.push([c.id,c.th,'Key point',x.key]);c.fields.forEach(([k,l])=>det.push([c.id,c.th,l,x.f[k]]))});
+  XLSX.utils.book_append_sheet(wb,sheet(det,[6,22,34,90]),'D0-D8 details');
+  XLSX.utils.book_append_sheet(wb,sheet([['Name','Role','Department / function'],...r.team.map(t=>[t.name,t.role,t.dept])],[30,18,30]),'D1 Team');
+  XLSX.utils.book_append_sheet(wb,sheet([['ID','Type','Action','Owner','Due','Status','Overdue'],
+    ...r.actions.map(a=>[a.id,a.type,a.text,a.owner,a.due,ASTAT.find(s=>s[0]===a.status)[1],overdue(a)?'Yes':''])],[8,22,60,18,13,13,9]),'Actions');
+  XLSX.utils.book_append_sheet(wb,sheet([['Item','Done'],...CHK.map((t,i)=>[t,r.chk[i]?'Yes':'No'])],[52,8]),'D7 Checklist');
+  const ck=checksFor(r);
+  XLSX.utils.book_append_sheet(wb,sheet([['Step','Level','Finding'],...(ck.length?ck.map(([lv,id,t])=>[id,CLAB[lv],t]):[['','','No common mistakes found']])],[8,8,80]),'Quality check');
+  XLSX.utils.book_append_sheet(wb,sheet([['Time','By','Change'],...r.log.slice().reverse().map(l=>{const d=new Date(l.t);return[isNaN(d)?l.t:d.toLocaleString('en-GB'),nm[l.by]||'',l.m]})],[22,24,50]),'History');
+  return XLSX.write(wb,{bookType:'xlsx',type:'array'})}
+async function xlsxRegister(){await lib('xlsx');const all=Object.values(reports);
+  const nm=await nameMap(all.map(r=>r.updatedBy||r.createdBy));
+  const rows=[['8D number','Problem','Customer','Part / product','Opened','Days open','Current step','Disciplines complete',...D.map(c=>c.id),'Past target','Actions done','Actions total','Actions overdue','Last edited by','Last edited']];
+  all.sort((a,b)=>(a.meta.no||'').localeCompare(b.meta.no||'')).forEach(r=>{const f=facts(r),u=new Date(r.updatedAt||r.createdAt);
+    rows.push([r.meta.no,r.meta.title,r.meta.customer,r.meta.part,r.meta.opened,f.days,f.cur?f.cur.id+' '+f.cur.th:'Closed',f.nd,...D.map(c=>stName(r.d[c.id].status)),
+      f.lateT?'Yes':'',f.dn,f.live,f.ov,nm[r.updatedBy||r.createdBy]||'',isNaN(u)?'':iso(u)])});
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sheet(rows,[14,48,22,22,12,10,26,11,...D.map(()=>12),11,12,12,14,22,12]),'8D Register');
+  return XLSX.write(wb,{bookType:'xlsx',type:'array'})}
+
+/* PDF: the report is laid out as separate blocks; each block is drawn and placed so none is cut across a page */
+function pdfBlocks(r,nm){const f=facts(r),m=r.meta,o=pd(m.opened),B=[],e=esc,v=s=>e(s)||'–';
+  B.push(`<div class="hdr"><div><div class="k">8D REPORT · EIGHT DISCIPLINES PROBLEM SOLVING</div><h1>${v(m.title)}</h1></div>
+    <div class="k" style="text-align:right;white-space:nowrap">8D number<br><b style="font-size:15px;color:#17212e" class="mono">${v(m.no)}</b></div></div>
+    <div class="grid"><div><span class="k">Customer</span><b>${v(m.customer)}</b></div><div><span class="k">Part / product</span><b>${v(m.part)}</b></div><div><span class="k">Opened</span><b>${v(fmt(m.opened))}${f.days==null?'':' · '+plural(f.days,'day')}</b></div>
+    <div><span class="k">Current step</span><b>${f.cur?f.cur.id+' '+e(f.cur.th):'Closed'}</b></div><div><span class="k">Disciplines complete</span><b>${f.nd}/9</b></div><div><span class="k">Actions done</span><b>${f.dn}/${f.live}${f.ov?` <span class="late">· ${f.ov} overdue</span>`:''}</b></div></div>`);
+  B.push(`<h2>Roadmap D0–D8</h2><table><tr><th style="width:34px">Step</th><th style="width:118px">Discipline</th><th style="width:72px">Status</th><th style="width:76px">Completed</th><th style="width:84px">Target</th><th>Key point</th></tr>${D.map(c=>{const x=r.d[c.id],t=tgt(r,c);
+    return`<tr><td><b>${c.id}</b></td><td>${e(c.th)}</td><td class="${x.status}">${ST[x.status]}</td><td>${e(fmt(x.done))}${x.done&&o&&pd(x.done)?`<br><span class="k">day ${diff(o,pd(x.done))}</span>`:''}</td><td${t&&t.late?' class="late"':''}>${t?`Day ${t.days}<br>${e(fmt(iso(t.due)))}${t.late?'<br>Late':''}`:''}</td><td>${e(x.key)}</td></tr>`}).join('')}</table>`);
+  const ck=checksFor(r);
+  B.push(`<h2>8D quality check <small>Checked automatically on export</small></h2>`+(ck.length?`<table>${ck.map(([lv,id,t])=>`<tr><td style="width:110px" class="${lv==='bad'?'late':''}">${id} · ${CLAB[lv]}</td><td>${e(t)}</td></tr>`).join('')}</table>`:`<p class="done" style="margin:0">No common mistakes found.</p>`));
+  D.forEach(c=>{const x=r.d[c.id],t=tgt(r,c);
+    let h=`<h2><span>${c.id} · ${e(c.th)}</span><small><span class="${x.status}">${ST[x.status]}</span>${x.done?' · completed '+e(fmt(x.done)):''}${t?` · target day ${t.days}`:''}</small></h2>
+      ${x.status==='done'&&x.override?`<table style="margin-bottom:6px"><tr><td class="late" style="background:#fbefd3"><b>Completed with ${plural(x.override.issues.length||1,'open issue')} (forced)</b> on ${e(fmt(x.override.at.slice(0,10)))} by ${e(nm[x.override.by]||'Someone')}. Open at that time: ${x.override.issues.map(s=>e(s)).join(' · ')||'–'}</td></tr></table>`:''}
+      <table class="kv"><tr><th>Key point</th><td>${v(x.key)}</td></tr>${c.fields.map(([k,l])=>`<tr><th>${e(l)}</th><td>${v(x.f[k])}</td></tr>`).join('')}</table>`;
+    if(c.id==='D1')h+=`<table style="margin-top:6px"><tr><th>Name</th><th>Role</th><th>Department / function</th></tr>${r.team.length?r.team.map(t=>`<tr><td>${v(t.name)}</td><td>${e(t.role)}</td><td>${v(t.dept)}</td></tr>`).join(''):'<tr><td colspan="3">No team members yet</td></tr>'}</table>`;
+    if(c.id==='D7')h+=`<table style="margin-top:6px"><tr><th>Prevent recurrence checklist (${r.chk.filter(Boolean).length}/6)</th><th style="width:80px">Result</th></tr>${CHK.map((t,i)=>`<tr><td>${e(t)}</td><td class="${r.chk[i]?'done':'todo'}">${r.chk[i]?'Done':'Not done'}</td></tr>`).join('')}</table>`;
+    B.push(h)});
+  const AH=`<tr><th style="width:42px">ID</th><th style="width:108px">Type</th><th>Action</th><th style="width:90px">Owner</th><th style="width:78px">Due</th><th style="width:70px">Status</th></tr>`;
+  const aRow=(a,i)=>`<tr><td><b>${e(a.id)}</b></td><td>${e(a.type)}</td><td>${v(a.text)}</td><td>${v(a.owner)}</td><td${overdue(a)?' class="late"':''}>${e(fmt(a.due))}${overdue(a)?'<br>Overdue':''}</td><td>${ASTAT.find(s=>s[0]===a.status)[1]}</td></tr>`;
+  if(!r.actions.length)B.push(`<h2>Actions</h2><p class="k" style="margin:0">No actions yet.</p>`);
+  for(let i=0;i<r.actions.length;i+=14)B.push((i?'':`<h2>Actions <small>${f.dn}/${f.live} done${f.ov?' · '+f.ov+' overdue':''}</small></h2>`)+`<table>${AH}${r.actions.slice(i,i+14).map((a,j)=>aRow(a,i+j)).join('')}</table>`);
+  const L=r.log.slice().reverse();
+  if(L.length)B.push(`<h2>Change history</h2><table><tr><th style="width:150px">Time</th><th style="width:150px">By</th><th>Change</th></tr>${L.map(l=>{const d=new Date(l.t);return`<tr><td>${e(isNaN(d)?l.t:d.toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'}))}</td><td>${e(nm[l.by]||'')}</td><td>${e(l.m)}</td></tr>`}).join('')}</table>`);
+  B.push(`<h2>Approval</h2><div class="sign"><div>Prepared by<br><span class="k">Date</span></div><div>Team leader<br><span class="k">Date</span></div><div>Champion<br><span class="k">Date</span></div><div>Customer acceptance<br><span class="k">Date</span></div></div>`);
+  return B}
+async function pdfReport(r){await Promise.all([lib('h2c'),lib('pdf')]);try{await document.fonts.ready}catch(e){}
+  const nm=await nameMap([...r.log.map(l=>l.by),...D.map(c=>r.d[c.id].override&&r.d[c.id].override.by)]);const blocks=pdfBlocks(r,nm);
+  const pdf=new window.jspdf.jsPDF({unit:'pt',format:'a4',compress:true});
+  const PW=pdf.internal.pageSize.getWidth(),PH=pdf.internal.pageSize.getHeight(),M=36,CW=PW-2*M,BOT=PH-M-14,GAP=12,SC=2;
+  const host=$('pdfhost');let y=M;
+  try{for(let b=0;b<blocks.length;b++){$('busy-s').textContent=`Section ${b+1} of ${blocks.length}`;
+      host.innerHTML=`<div class="ps">${blocks[b]}</div>`;
+      const cv=await window.html2canvas(host.firstChild,{scale:SC,backgroundColor:'#ffffff',logging:false,scrollX:0,scrollY:0,windowWidth:Math.max(window.innerWidth,800)});
+      const k=CW/cv.width,h=cv.height*k;
+      if(y+h>BOT&&y>M){pdf.addPage();y=M}
+      if(h<=BOT-y){pdf.addImage(cv.toDataURL('image/jpeg',.92),'JPEG',M,y,CW,h);y+=h+GAP;continue}
+      /* taller than the room left on a page: slice it */
+      let sy=0;while(sy<cv.height){const room=Math.floor((BOT-y)/k),sh=Math.min(room,cv.height-sy);
+        const part=document.createElement('canvas');part.width=cv.width;part.height=sh;const g=part.getContext('2d');g.fillStyle='#ffffff';g.fillRect(0,0,part.width,sh);g.drawImage(cv,0,sy,cv.width,sh,0,0,cv.width,sh);
+        pdf.addImage(part.toDataURL('image/jpeg',.92),'JPEG',M,y,CW,sh*k);sy+=sh;y+=sh*k+GAP;if(sy<cv.height){pdf.addPage();y=M}}}}
+  finally{host.innerHTML=''}
+  const n=pdf.getNumberOfPages(),tag=(r.meta.no||'').replace(/[^\x20-\x7E]/g,'').trim();
+  for(let i=1;i<=n;i++){pdf.setPage(i);pdf.setFontSize(8);pdf.setTextColor(110);pdf.text(`${tag?tag+'   ':''}Page ${i} of ${n}`,PW-M,PH-18,{align:'right'});pdf.text('Exported '+stamp(),M,PH-18)}
+  return pdf.output('arraybuffer')}
+
+async function exportRun(kind,btn){const msg=kind==='reg'?$('l-xmsg'):$('r-xmsg');msg.textContent='';if(btn.disabled)return;btn.disabled=true;flush();
+  try{let data,name;
+    if(kind==='reg'){busy(true,'Creating Excel file…');data=await xlsxRegister();name=`8D Register ${stamp()}.xlsx`}
+    else{const r=clone(S),base=fileSafe([r.meta.no,r.meta.title].filter(Boolean).join(' '));
+      if(kind==='pdf'){busy(true,'Creating PDF…');data=await pdfReport(r);name=base+'.pdf'}
+      else{busy(true,'Creating Excel file…');data=await xlsxReport(r);name=base+'.xlsx'}}
+    busy(false);await offer(name,data,msg)}
+  catch(e){busy(false);msg.textContent='The file could not be created. Check your internet connection and try again.'}
+  finally{busy(false);btn.disabled=false}}
+
+/* ---------- routing ---------- */
+function route(){flush();const h=location.hash.slice(1),id=h.startsWith('r-')?h.slice(2):null;
+  if(id!==openId){pending.clear();S=null;gate=null;openId=id;hideToast();saveNote('');banner('r-note','');$('sumbox').hidden=true;$('r-xmsg').textContent=''}
+  show()}
+function show(){
+  if(openId){const r=reports[openId];
+    if(!r){if(loaded||dbState!=='loading'){openId=null;banner('l-note','That report was not found. It may have been deleted.');location.hash='list';return}
+      $('v-list').hidden=false;$('v-report').hidden=true;rList();return}
+    if(!S){S=clone(r);sel=Math.max(0,D.findIndex(c=>S.d[c.id].status!=='done'));metaOpen=!S.meta.title.trim()&&!RO;rReport();
+      /* actions saved before ids existed were numbered on load; save those numbers so they are the same for everyone from now on */
+      if(S._ids&&!RO&&db){S._ids=false;touch('actions');touch('actSeq')}}
+    $('v-list').hidden=true;$('v-report').hidden=false}
+  else{$('v-list').hidden=false;$('v-report').hidden=true;rList()}}
+window.addEventListener('hashchange',route);
+
+/* another person's change arrives: take it, keep what this person is still typing */
+function incoming(){if(!openId)return rList();const r=reports[openId];
+  if(!r){if(S||loaded){S=null;openId=null;pending.clear();banner('l-note','The report you had open was deleted by someone else.');location.hash='list';show()}return}
+  if(!S)return show();
+  const n=clone(r),old=S;
+  pending.forEach(p=>{const ks=p.split('.');if(ks.length===1){n[p]=old[p];return}
+    const l=ks.pop();const src=ks.reduce((o,k)=>o&&o[k],old),dst=ks.reduce((o,k)=>o&&o[k],n);if(src&&dst)dst[l]=src[l]});
+  if(JSON.stringify(n)!==JSON.stringify(old)){S=n;rReport()}}
+
+/* ---------- events ---------- */
+document.addEventListener('input',e=>{const t=e.target;if(t.id==='q'){rList();return}
+  const b=t.dataset&&t.dataset.b;if(!b||!S||RO)return;
+  const v=t.type==='checkbox'?t.checked:t.type==='number'?(t.value===''?'':Math.max(0,Number(t.value)||0)):t.value;
+  const isStat=b.startsWith('actions.')&&b.endsWith('.status');
+  if(isStat){const a=S.actions[+b.split('.')[1]];if(a)logEv(`Action ${a.id} → ${ASTAT.find(s=>s[0]===v)[1]}`)}
+  setP(b,v);touch(b);
+  /* the same field can be on screen twice (an action in its discipline and in the table): keep both copies in step */
+  document.querySelectorAll(`[data-b="${b}"]`).forEach(el=>{if(el!==t){if(el.type==='checkbox')el.checked=v;else el.value=v;grow(el)}});
+  grow(t);rLight();if(b.startsWith('meta.'))rHead();if(isStat){rHist();fillNames()}});
+document.addEventListener('change',e=>{const t=e.target;if(!(t.dataset&&t.dataset.r)||!S)return;if(t.dataset.b.startsWith('actions'))refreshActs()});
+/* auto-growing action text where CSS field-sizing is not supported */
+const GROW_CSS=window.CSS&&CSS.supports&&CSS.supports('field-sizing','content');
+function grow(el){if(GROW_CSS||!el||!el.classList||!el.classList.contains('grow'))return;el.style.height='auto';el.style.height=el.scrollHeight+2+'px'}
+const growAll=()=>document.querySelectorAll('textarea.grow').forEach(grow);
+document.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;const ds=t.dataset;
+  if(ds.flt){flt=ds.flt;document.querySelectorAll('#flt button').forEach(b=>b.setAttribute('aria-pressed',b===t));rList();return}
+  if(t.id==='b-create'||t.id==='b-newex'){create(t.id==='b-newex',t);return}
+  if(t.id==='b-xreg'){exportRun('reg',t);return}
+  if(!S)return;
+  if(t.id==='b-pdf'){exportRun('pdf',t);return}
+  if(t.id==='b-xlsx'){exportRun('xlsx',t);return}
+  if(ds.step!=null){sel=+ds.step;gate=null;rDetail();rLight();lock();toDetail();return}
+  if(ds.go){goTo(ds.go);return}
+  if(ds.jump){const h=$('chk-h');$('checks').scrollIntoView({block:'start',behavior:smooth()});if(h)h.focus({preventScroll:true});return}
+  if(ds.gate){const g=gate;gate=null;if(ds.gate==='go'&&g)setStatus(g.step,'done',g.items);else{rDetail();lock();focusStatus()}return}
+  if(ds.st){const id=D[sel].id;if(S.d[id].status===ds.st){gate=null;rDetail();lock();focusStatus();return}
+    if(ds.st==='done'){const items=gateFor(id);if(items.length){gate={step:id,items};rDetail();lock();$('d-h').focus({preventScroll:true});return}}
+    gate=null;setStatus(id,ds.st);return}
+  if(ds.delteam!=null){const i=+ds.delteam,m=S.team.splice(i,1)[0],who=m.name.trim()||'unnamed member';
+    touch('team');logEv(`Team member "${who}" removed`);rDetail();rLight();rHist();lock();fillNames();
+    const j=Math.min(i,S.team.length-1);focusId(j>=0?fid('team.'+j+'.name'):'b-addteam');
+    showToast('Team member removed',()=>{const k=Math.min(i,S.team.length);S.team.splice(k,0,m);touch('team');logEv(`Team member "${who}" restored`);rDetail();rLight();rHist();lock();fillNames();focusId(fid('team.'+k+'.name'))});return}
+  if(ds.delact!=null){const i=+ds.delact,a=S.actions.splice(i,1)[0],name=actName(a);
+    touch('actions');logEv(`Action ${name} removed`);refreshActs();rLight();rHist();fillNames();
+    const j=Math.min(i,S.actions.length-1);focusId(j>=0?fid('actions.'+j+'.text'):'b-addact');
+    showToast(`Action ${a.id} removed`,()=>{const k=Math.min(i,S.actions.length);S.actions.splice(k,0,a);touch('actions');logEv(`Action ${name} restored`);refreshActs();rLight();rHist();fillNames();focusId(fid('actions.'+k+'.text'))});return}
+  if(t.id==='b-addteam'){S.team.push({name:'',role:'Member',dept:''});touch('team');rDetail();lock();return}
+  if(t.id==='b-addact'){newAction(TYPES[1]);refreshActs();rLight();
+    const n=$(fid('actions.'+(S.actions.length-1)+'.text'));if(n)n.focus();return}
+  if(ds.addtype){newAction(ds.addtype);refreshActs();rLight();
+    const n=$(dfid('actions.'+(S.actions.length-1)+'.text'));if(n)n.focus();return}
+  if(t.id==='b-meta'){metaOpen=!metaOpen;rHead();if(metaOpen){const n=$(fid('meta.title'));if(n)n.focus()}return}
+  if(t.id==='b-undo'){const f=undoFn;hideToast();if(f&&S)f();return}
+  if(t.id==='b-del'){if(ds.arm){clearTimeout(t._tm);delete ds.arm;t.textContent='Delete';t.classList.remove('danger');
+      const id=openId;pending.clear();clearTimeout(flushT);chain=chain.then(()=>db.collection('reports').doc(id).delete()).then(()=>{},()=>banner('l-note','The report could not be deleted.'));
+      S=null;openId=null;delete reports[id];location.hash='list'}
+    else{ds.arm='1';t.textContent='Select again to delete for good';t.classList.add('danger');t._tm=setTimeout(()=>{delete ds.arm;t.textContent='Delete';t.classList.remove('danger')},4000)}return}
+  if(t.id==='b-sum'){$('sumtext').value=summary();$('copymsg').textContent='';const b=$('sumbox');b.hidden=false;b.scrollIntoView({block:'nearest'});return}
+  if(t.id==='b-sumclose'){$('sumbox').hidden=true;return}
+  if(t.id==='b-copy'){const ta=$('sumtext'),m=$('copymsg');
+    const fb=()=>{ta.focus();ta.select();m.textContent='Text selected. Press Ctrl+C to copy.'};
+    try{navigator.clipboard.writeText(ta.value).then(()=>{m.textContent='Copied'},fb)}catch(err){fb()}}
+});
+
+/* a completion date is evidence: moving a step back keeps it as prevDone, and completing again restores it */
+function setStatus(id,st,issues){const c=D.find(x=>x.id===id),x=S.d[id];let note='';
+  if(st==='done'){x.done=x.done||x.prevDone||iso(today());x.prevDone=''}
+  else if(x.status==='done'&&x.done){note=` (was completed ${fmt(x.done)})`;x.prevDone=x.done;x.done=''}
+  /* completing past open issues is allowed but never silent: it is stored on the step, logged, and shown on the card, the check panel and the PDF */
+  if(st==='done'&&issues&&issues.length){
+    x.override={at:new Date().toISOString(),by:myId||'',issues:issues.slice(0,8).map(f=>(f[1]+': '+f[2]).slice(0,300))};
+    note=` with ${plural(issues.length,'open issue')} (forced)`}
+  else if(x.override)x.override={at:'',by:'',issues:[]};
+  x.status=st;touch('d.'+id+'.status');touch('d.'+id+'.done');touch('d.'+id+'.prevDone');touch('d.'+id+'.override');
+  logEv(`${id} ${c.th} → ${ST[st]}${note}`);rDetail();rLight();rHist();lock();fillNames();focusStatus()}
+let undoFn=null,toastT=null;
+function showToast(msg,fn){$('toast-t').textContent=msg;undoFn=fn;$('toast').hidden=false;clearTimeout(toastT);toastT=setTimeout(hideToast,8000)}
+function hideToast(){clearTimeout(toastT);undoFn=null;$('toast').hidden=true}
+const smooth=()=>matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth';
+/* on narrow screens the form sits below the roadmap: bring it into view when a step is chosen */
+function toDetail(force){const d=$('detail'),r=d.getBoundingClientRect();
+  if(force||(matchMedia('(max-width:860px)').matches&&(r.top<0||r.top>innerHeight*.6)))d.scrollIntoView({block:'start',behavior:smooth()})}
+/* a finding's target: a discipline (open its form) or an action row (scroll to it, mark it, focus its text) */
+function goTo(go){
+  if(go[0]==='s'){sel=+go.slice(1);gate=null;rDetail();rLight();lock();toDetail(true);$('d-h').focus({preventScroll:true});return}
+  if(go[0]==='a'){const row=$('arow-'+go.slice(1));if(!row)return;
+    row.scrollIntoView({block:'center',behavior:smooth()});row.classList.add('flash');setTimeout(()=>row.classList.remove('flash'),2400);
+    const f=row.querySelector('[data-b$=".text"]');if(f)f.focus({preventScroll:true})}}
+
+async function create(ex,btn){if(!db||RO)return;btn.disabled=true;
+  const r=ex?example():blank(),now=new Date().toISOString(),id=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+  if(!ex){const y=new Date().getFullYear(),n=Object.values(reports).filter(x=>x.meta.no.startsWith('8D-'+y+'-')).length+1;r.meta.no='8D-'+y+'-'+String(n).padStart(3,'0')}
+  r.createdBy=r.updatedBy=myId||'';r.createdAt=r.updatedAt=now;r.log=[{t:now,by:myId||'',m:'8D report opened'}];
+  try{await db.collection('reports').doc(id).set(r);reports[id]=norm(r);banner('l-note','');location.hash='r-'+id}
+  catch(e){if(e&&e.code==='invalid_argument'){RO=true;banner('l-note','You have view-only access, so you cannot open a new report.')}
+    else banner('l-note',e&&e.code==='quota_exceeded'?'Storage is full. Delete old reports before opening a new one.':'The report could not be created. Try again.');rList()}
+  btn.disabled=false}
+
+function summary(){const m=S.meta,L=[];
+  L.push('8D report: '+(m.title||'-'),`8D number: ${m.no||'-'} | Opened: ${fmt(m.opened)||'-'} | Customer: ${m.customer||'-'} | Part: ${m.part||'-'}`,'');
+  D.forEach(c=>{const x=S.d[c.id];L.push(`${c.id} ${c.th} [${ST[x.status]}${x.done?' '+fmt(x.done):''}]`);
+    if(c.id==='D1')S.team.filter(t=>t.name.trim()).forEach(t=>L.push(`  - ${t.name} | ${t.role} | ${t.dept}`));
+    c.fields.forEach(([k,l])=>{if(x.f[k].trim())L.push(`  ${l}: ${x.f[k].trim()}`)});
+    if(c.id==='D7')CHK.forEach((t,i)=>L.push(`  [${S.chk[i]?'x':' '}] ${t}`));L.push('')});
+  L.push('Actions');S.actions.forEach(a=>L.push(`  ${a.id} [${ASTAT.find(s=>s[0]===a.status)[1]}${overdue(a)?', overdue':''}] ${a.type}: ${a.text} | ${a.owner||'-'} | due ${fmt(a.due)||'-'}`));
+  return L.join('\n')}
+
+/* ---------- start: draw the empty register, then light up shared data ---------- */
+route();
+(async()=>{
+  const cl=window.claude;
+  if(cl&&cl.use){[db,user,dl]=await Promise.all([cl.use('db'),cl.use('user'),cl.use('downloads')])}
+  $('b-pdf').hidden=$('b-xlsx').hidden=!dl;
+  if(!db){dbState='none';show();return}
+  if(user){myId=await user.id();RO=(await user.can('data.write'))===false}
+  const slow=setTimeout(()=>{if(!loaded)banner('l-note','Cannot reach the data store yet. What you see may be out of date.')},10000);
+  db.collection('reports').onSnapshot(snap=>{
+    const next={};snap.docs.forEach(d=>{const b=d.data();if(b)next[d.id]=norm(b)});reports=next;
+    if(!snap.metadata.fromCache){if(!loaded)banner('l-note','');loaded=true;dbState='ok';clearTimeout(slow)}
+    incoming();if(!openId)rList()
+  },()=>{clearTimeout(slow);dbState='error';loaded=true;banner('l-note','');show()});
+  show();
+})();
+</script>
