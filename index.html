@@ -384,6 +384,11 @@ textarea.grow{min-height:38px;resize:none;field-sizing:content;max-height:14em;o
       '<span style="display:flex;gap:8px;margin-left:auto;align-items:center"><span id="localmsg" role="status"></span>'+
       '<button type="button" id="lb-exp" class="btn">Export all (JSON)</button><label class="btn" style="cursor:pointer">Import<input id="lb-imp" type="file" accept="application/json,.json" hidden></label></span>';
     document.body.insertBefore(bar,document.body.firstChild);
+    /* the page's copy describes the shared team version; here nothing is shared, so say what is true */
+    var sub=document.querySelector('#v-list .brand .note');
+    if(sub)sub.textContent='8D reports saved in this browser. Only you see them, on this device.';
+    var emp=document.getElementById('l-empty');
+    if(emp)new MutationObserver(function(){emp.querySelectorAll('p').forEach(function(p){if(/Reports your team opens/.test(p.textContent))p.textContent=p.textContent.replace('Reports your team opens appear here','Reports you create appear here')})}).observe(emp,{childList:true,subtree:true});
     var msg=bar.querySelector('#localmsg');
     bar.querySelector('#lb-exp').onclick=function(){var n=Object.keys(load()).length;if(!n){msg.textContent='Nothing to export yet.';return}
       downloads.save({filename:'8d-reports-'+new Date().toISOString().slice(0,10)+'.json',data:JSON.stringify({app:'ga-8d',version:1,reports:load()},null,1)}).then(function(){msg.textContent='Exported '+n+' report'+(n===1?'':'s')+'.'})};
