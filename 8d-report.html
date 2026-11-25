@@ -154,7 +154,7 @@ td.n{font-family:var(--mono);color:var(--muted);padding-top:11px;width:3.6em;whi
 .dmeta{grid-column:2/-1;display:grid;grid-template-columns:minmax(0,1.8fr) minmax(0,1fr) minmax(0,1.2fr) auto;gap:8px;align-items:start}
 .dmeta .x{margin-top:16px}
 .fcell{display:flex;flex-direction:column;gap:2px;min-width:0}
-.fcell .lbl{font-size:.68rem}
+.fcell .lbl{font-size:.7rem}
 .dmeta input{padding:5px 8px;font-size:.88rem}
 .issuelink{border:0;background:none;padding:0;font:inherit;font-size:.9rem;color:var(--accent);text-decoration:underline;text-underline-offset:3px}
 .issuelink:hover{color:var(--fg)}
@@ -230,8 +230,9 @@ textarea.grow{min-height:38px;resize:none;field-sizing:content;max-height:14em;o
   .dmeta{grid-column:2;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
   .dmeta .fcell:first-child{grid-column:1/-1}
   .dmeta .x{grid-column:1/-1;justify-self:end;margin-top:0}}
-/* phone: the register becomes one card per report, so the current step and overdue flags stay on screen */
-@media (max-width:640px){
+/* phone and tablet: the register becomes one card per report, so the current step and overdue flags stay on screen
+   (the table needs about 910px; below 960px it would scroll sideways) */
+@media (max-width:960px){
   .reg thead{display:none}
   .reg tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"prob prob" "no step" "opened actions" "edited edited";gap:8px 14px;padding:14px 0;border-bottom:1px solid var(--line)}
   .reg tr:last-child{border-bottom:0}
@@ -241,18 +242,20 @@ textarea.grow{min-height:38px;resize:none;field-sizing:content;max-height:14em;o
   .reg td[data-label]::before{content:attr(data-label);font-family:var(--body);font-size:.72rem;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
   .reg .ttl{min-width:0;font-size:1.05rem}
   .reg .pill{white-space:normal}}
-/* phone: each action is a stacked card with visible field labels */
-@media (max-width:640px){
+/* phone and tablet: each action in the overview is a compact card (the table needs about 850px, so it hid Status and Edit below that) */
+@media (max-width:960px){
   .acts thead{display:none}
-  .acts tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"n x" "type type" "text text" "owner due" "status status";gap:8px 10px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .acts tr{display:grid;grid-template-columns:3.4em minmax(0,1fr) minmax(0,1fr) auto;grid-template-areas:"n text text x" ". type owner ." ". due status .";gap:6px 12px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .acts tr:last-child{border-bottom:0}
   .acts tr.none{display:block;border:0}
-  .acts td{padding:0;min-width:0!important;display:flex;flex-direction:column;gap:3px}
+  .acts td{padding:0;border:0;min-width:0!important;display:flex;flex-direction:column;gap:2px;align-items:flex-start}
   .acts td[data-label]::before{content:attr(data-label);font-size:.72rem;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
-  .acts td.n{grid-area:n;flex-direction:row;align-items:center;width:auto;padding:0;font-weight:600;color:var(--fg)}
-  .acts td.n::before{content:"Action "}
-  .acts td.n{font-size:.95rem}
+  .acts td[data-label="Action"]::before{content:none}
+  .acts td[data-label="Action"]{font-weight:600}
+  .acts td.n{grid-area:n;width:auto;padding:2px 0 0;color:var(--muted)}
   .acts td:nth-child(2){grid-area:type}.acts td:nth-child(3){grid-area:text}.acts td:nth-child(4){grid-area:owner}
-  .acts td:nth-child(5){grid-area:due}.acts td:nth-child(6){grid-area:status}.acts td:nth-child(7){grid-area:x;align-items:flex-end}}
+  .acts td:nth-child(5){grid-area:due}.acts td:nth-child(6){grid-area:status}.acts td:nth-child(7){grid-area:x}
+  .acts td:nth-child(5) .pill{margin-left:0}}
 /* touch: 44px targets */
 @media (pointer:coarse),(max-width:560px){
   .x,.btn,.seg button{min-height:44px}.x{min-width:44px}
@@ -550,7 +553,8 @@ function rLight(){const f=facts(S),o=pd(S.meta.opened);
    `<li>Opened <b>${esc(fmt(S.meta.opened))||'–'}</b>${f.days==null?'':` · day <b class="mono">${f.days}</b>`}</li>`+
    `<li><b class="mono">${f.nd}/9</b> disciplines complete</li>`+
    `<li><b class="mono">${f.dn}/${f.live}</b> actions done${f.ov?` <span class="pill bad">${f.ov} overdue</span>`:''}</li>`+
-   (n=>n?`<li><button class="issuelink" data-jump="checks">${plural(n,'issue')} to review</button></li>`:'')(issuesOf(checksFor(S)).length);
+   (n=>n?`<li><button class="issuelink" data-jump="checks">${plural(n,'issue')} to review</button></li>`:'')(issuesOf(checksFor(S)).length)+
+   (k=>k?`<li><button class="issuelink" data-jump="checks"><span class="pill ovr">${plural(k,'exception')}</span></button></li>`:'')(D.filter(c=>S.d[c.id].status==='done'&&S.d[c.id].override).length);
   $('actsum').textContent=`${plural(S.actions.length,'action')} · ${f.dn} done`+(f.ov?` · ${f.ov} overdue`:'');
   $('road').innerHTML=D.map((c,i)=>{const x=S.d[c.id],t=tgt(S,c);let ft='';
     if(x.status==='done'&&pd(x.done))ft=`<span class="${t&&t.late?'t-bad':'t-ok'}">Completed ${esc(fmt(x.done))}${o?` (day ${diff(o,pd(x.done))})`:''}${t&&t.late?', late':''}</span>`;
@@ -574,7 +578,9 @@ let lastChecks='';
 const issuesOf=w=>w.filter(f=>f[0]==='bad'||f[0]==='warn');
 function rChecks(){const w=checksFor(S),none=D.every(c=>S.d[c.id].status==='todo'),sig=openId+'|'+none+'|'+JSON.stringify(w.map(f=>[f[0],f[1],f[2],f[3],f[4],f[6]]));if(sig===lastChecks)return;lastChecks=sig;
   $('checks').innerHTML=`<h2 id="chk-h" tabindex="-1">8D quality check</h2><p class="note" style="margin:0">Common 8D mistakes, checked as you fill in the report. Select one to go to it.</p>`+
-   (w.length?`<ul>${w.map(f=>`<li>${findBtn(f)}</li>`).join('')}</ul>`:none?`<p class="note" style="margin:0">Nothing to check yet. Checks start once you begin D0.</p>`:`<p style="margin:0"><span class="pill ok">Pass</span> No common mistakes found.</p>`)}
+   (w.length?`<ul>${w.map(f=>`<li>${findBtn(f)}</li>`).join('')}</ul>`:none?`<p class="note" style="margin:0">Nothing to check yet. Checks start once you begin D0.</p>`:`<p style="margin:0"><span class="pill ok">Clear</span> ${esc(clearText(S))}</p>`)}
+/* "Pass" claimed more than the check had looked at: say how many steps were actually checked */
+const clearText=r=>{const n=D.filter(c=>r.d[c.id].status!=='todo').length;return n===0?'Nothing to check yet.':`No common mistakes in the ${plural(n,'step')} started so far.`}
 const isOpen=a=>a.status==='open'||a.status==='doing';
 const actName=a=>`${a.id} "${a.text.trim()||'no description'}"`;
 /* a new action: its id comes from a counter that only goes up, so a removed id is never given to another action */
@@ -592,6 +598,15 @@ function checksFor(S){const w=[],d=S.d,add=(lv,id,t,go,nogate,short,reopen)=>w.p
   if(d.D4.status==='done'&&!d.D4.f.ver.trim())add('bad','D4','D4 is complete but the root causes are not verified.','',false,'The root causes are not verified.');
   if(d.D5.status!=='todo'&&!d.D5.f.esc.trim())add('warn','D5','No corrective action for the escape yet.');
   if(d.D5.status==='done'&&!d.D5.f.ver.trim())add('bad','D5','D5 is complete without evidence that the actions work.','',false,'There is no evidence yet that the actions work.');
+  /* a step marked complete must hold something: these steps had no content rule, so an empty one used to pass */
+  const empty=(id,key)=>!d[id].f[key].trim(),done=id=>d[id].status==='done';
+  if(done('D0')&&empty('D0','symptom'))add('warn','D0','D0 is complete but the symptom is empty.','',false,'The symptom is not described.','D0');
+  if(done('D3')&&empty('D3','ica'))add('warn','D3','D3 is complete but no containment is described.','',false,'No interim containment is described.','D3');
+  if(done('D3')&&empty('D3','eff'))add('warn','D3','D3 is complete but there is no evidence the containment works.','',false,'There is no evidence the containment works.','D3');
+  if(done('D6')&&empty('D6','impl'))add('warn','D6','D6 is complete but nothing is recorded as implemented.','',false,'Nothing is recorded as implemented.','D6');
+  if(done('D6')&&empty('D6','val'))add('warn','D6','D6 is complete but there are no validation results.','',false,'There are no validation results.','D6');
+  if(done('D7')&&empty('D7','sys'))add('warn','D7','D7 is complete but no systemic preventive action is described.','',false,'No systemic preventive action is described.','D7');
+  if(done('D8')&&empty('D8','close'))add('warn','D8','D8 is complete but there is no closure or customer acceptance recorded.','',false,'No closure or customer acceptance is recorded.','D8');
   /* closure rules: an open action under a step marked complete is something to settle, not a mistake. Each one offers the way out: move the step back. */
   const flagged=new Set();
   S.actions.forEach((a,i)=>{if(!isOpen(a)||blankA(a))return;
@@ -609,7 +624,9 @@ function checksFor(S){const w=[],d=S.d,add=(lv,id,t,go,nogate,short,reopen)=>w.p
     const acc=new Set(x.override.issues);let open=0;
     for(let k=w.length-1;k>=0;k--){const f=w[k];if(f[1]===c.id&&acc.has((f[5]||f[2]).slice(0,300))){w.splice(k,1);open++}}
     const n=x.override.issues.length||1;
-    add('ovr',c.id,`${c.id} was completed with an exception on ${fmt(x.override.at.slice(0,10))}: ${plural(n,'open issue')} accepted${open?`, ${open} still open`:', now resolved'}.`,'',true)});
+    /* "accepted" counts the issues that were open when the step was completed; "open" is how many of those still are. They are the same issues, not two sets. */
+    const state=open===0?(n===1?'It has since been resolved':'All have since been resolved'):open===n?(n===1?'It is still open':'All are still open'):`${open} of them are still open`;
+    add('ovr',c.id,`${c.id} was completed with an exception on ${fmt(x.override.at.slice(0,10))}, accepting ${plural(n,'open issue')}. ${state}.`,'',true)});
   return w}
 /* what completing this discipline would leave unresolved (lateness is a fact, not a reason to stop) */
 function gateFor(id){const t=clone(S);t.d[id].status='done';t.d[id].override=null;if(!t.d[id].done)t.d[id].done=iso(today());
@@ -624,12 +641,12 @@ function rDetail(){const c=D[sel],p='d.'+c.id,x=S.d[c.id];
    <div class="seg" role="group" aria-label="Status">${Object.entries(ST).map(([k,t])=>`<button data-st="${k}" aria-pressed="${x.status===k}">${t}</button>`).join('')}</div></div>`+
    (gate&&gate.step===c.id?`<div class="gate" role="group" aria-labelledby="gate-h"><p id="gate-h" tabindex="-1">Open before ${c.id} can close</p>
      <ul>${gate.items.map(f=>`<li>${findBtn(f,true)}</li>`).join('')}</ul>
-     <div class="field"><label class="lbl" for="gate-reason">Reason for completing anyway (optional)</label>
-       <input type="text" id="gate-reason" maxlength="200" placeholder="e.g. Supplier install moved to 15 Dec; customer agreed"></div>
-     <p class="note" style="margin:0">Completing with an exception saves your name, today's date, this list and your reason on the report.</p>
-     <div class="tools"><button class="btn primary" data-gate="keep">${x.status==='doing'?'Stay in progress':'Leave as not started'}</button><button class="btn" data-gate="go">Complete with exception</button></div></div>`:'')+
+     <div class="field"><label class="lbl" for="gate-reason">Reason for completing anyway (required)</label>
+       <input type="text" id="gate-reason" maxlength="200" required aria-describedby="gate-note" placeholder="e.g. Supplier install moved to 15 Dec; customer agreed"></div>
+     <p class="note" id="gate-note" style="margin:0">Completing with an exception saves your name, today's date, this list and your reason on the report. It goes on the PDF the customer sees.</p>
+     <div class="tools"><button class="btn primary" data-gate="keep">${x.status==='doing'?'Stay in progress':'Leave as not started'}</button><button class="btn" data-gate="go" disabled>Complete with exception</button></div></div>`:'')+
    (x.status==='done'&&x.override?`<div class="ovrnote"><span><b>Completed with an exception</b> on ${esc(fmt(x.override.at.slice(0,10)))} by ${uid(x.override.by)}. Open at that time:</span>
-     <ul>${x.override.issues.map(s=>`<li>${esc(s)}</li>`).join('')}</ul>${x.override.reason?`<span><b>Reason:</b> ${esc(x.override.reason)}</span>`:''}</div>`:'')+
+     <ul>${x.override.issues.map(s=>`<li>${esc(s)}</li>`).join('')}</ul>${x.override.reason?`<span><b>Reason:</b> ${esc(x.override.reason)}</span>`:'<span class="t-warn"><b>No reason recorded.</b></span>'}</div>`:'')+
    `<p class="q">${esc(c.q)}</p>`+fld(p+'.key','Key point (shown on the roadmap)',tx(p+'.key','The main point of this discipline in one or two lines',2));
   if(c.id==='D1')h+=`<div class="tblwrap"><table class="team"><thead><tr><th>Name</th><th>Role</th><th>Department / function</th><th></th></tr></thead><tbody>${S.team.map((m,i)=>`<tr><td>${inp('team.'+i+'.name','text','Name','aria-label="Name"')}</td><td>${sl('team.'+i+'.role',ROLES,'Role')}</td><td>${inp('team.'+i+'.dept','text','Department, expertise','aria-label="Department"')}</td><td><button class="x" data-delteam="${i}" aria-label="Remove team member">✕</button></td></tr>`).join('')}</tbody></table></div><div><button class="btn" id="b-addteam">+ Add team member</button></div>`;
   const fs=c.fields.map(([k,l,ph,wide])=>`<div class="field"${wide?' style="grid-column:1/-1"':''}><label class="lbl" for="${fid(p+'.f.'+k)}">${esc(l)}</label>${tx(p+'.f.'+k,ph,c.grid&&!wide?2:3)}</div>`).join('');
@@ -727,7 +744,7 @@ async function xlsxReport(r){await lib('xlsx');const f=facts(r),m=r.meta,wb=XLSX
     ...r.actions.map(a=>[a.id,a.type,a.text,a.owner,a.due,ASTAT.find(s=>s[0]===a.status)[1],overdue(a)?'Yes':''])],[8,22,60,18,13,13,9]),'Actions');
   XLSX.utils.book_append_sheet(wb,sheet([['Item','Done'],...CHK.map((t,i)=>[t,r.chk[i]?'Yes':'No'])],[52,8]),'D7 Checklist');
   const ck=checksFor(r);
-  XLSX.utils.book_append_sheet(wb,sheet([['Step','Level','Finding'],...(ck.length?ck.map(([lv,id,t])=>[id,CLAB[lv],t]):[['','','No common mistakes found']])],[8,8,80]),'Quality check');
+  XLSX.utils.book_append_sheet(wb,sheet([['Step','Level','Finding'],...(ck.length?ck.map(([lv,id,t])=>[id,CLAB[lv],t]):[['','',clearText(r)]])],[8,8,80]),'Quality check');
   XLSX.utils.book_append_sheet(wb,sheet([['Time','By','Change'],...r.log.slice().reverse().map(l=>{const d=new Date(l.t);return[isNaN(d)?l.t:d.toLocaleString('en-GB'),nm[l.by]||'',l.m]})],[22,24,50]),'History');
   return XLSX.write(wb,{bookType:'xlsx',type:'array'})}
 async function xlsxRegister(){await lib('xlsx');const all=Object.values(reports);
@@ -748,10 +765,10 @@ function pdfBlocks(r,nm){const f=facts(r),m=r.meta,o=pd(m.opened),B=[],e=esc,v=s
   B.push(`<h2>Roadmap D0–D8</h2><table><tr><th style="width:34px">Step</th><th style="width:118px">Discipline</th><th style="width:72px">Status</th><th style="width:76px">Completed</th><th style="width:84px">Target</th><th>Key point</th></tr>${D.map(c=>{const x=r.d[c.id],t=tgt(r,c);
     return`<tr><td><b>${c.id}</b></td><td>${e(c.th)}</td><td class="${x.status}">${ST[x.status]}</td><td>${e(fmt(x.done))}${x.done&&o&&pd(x.done)?`<br><span class="k">day ${diff(o,pd(x.done))}</span>`:''}</td><td${t&&t.late?' class="late"':''}>${t?`Day ${t.days}<br>${e(fmt(iso(t.due)))}${t.late?'<br>Late':''}`:''}</td><td>${e(x.key)}</td></tr>`}).join('')}</table>`);
   const ck=checksFor(r);
-  B.push(`<h2>8D quality check <small>Checked automatically on export</small></h2>`+(ck.length?`<table>${ck.map(([lv,id,t])=>`<tr><td style="width:110px" class="${lv==='bad'?'late':''}">${id} · ${CLAB[lv]}</td><td>${e(t)}</td></tr>`).join('')}</table>`:`<p class="done" style="margin:0">No common mistakes found.</p>`));
+  B.push(`<h2>8D quality check <small>Checked automatically on export</small></h2>`+(ck.length?`<table>${ck.map(([lv,id,t])=>`<tr><td style="width:110px" class="${lv==='bad'?'late':''}">${id} · ${CLAB[lv]}</td><td>${e(t)}</td></tr>`).join('')}</table>`:`<p class="done" style="margin:0">${e(clearText(r))}</p>`));
   D.forEach(c=>{const x=r.d[c.id],t=tgt(r,c);
     let h=`<h2><span>${c.id} · ${e(c.th)}</span><small><span class="${x.status}">${ST[x.status]}</span>${x.done?' · completed '+e(fmt(x.done)):''}${t?` · target day ${t.days}`:''}</small></h2>
-      ${x.status==='done'&&x.override?`<table style="margin-bottom:6px"><tr><td class="late" style="background:#fbefd3"><b>Completed with an exception</b> on ${e(fmt(x.override.at.slice(0,10)))} by ${e(nm[x.override.by]||'Someone')}. Open at that time: ${x.override.issues.map(s=>e(s)).join(' · ')||'–'}${x.override.reason?`<br><b>Reason:</b> ${e(x.override.reason)}`:''}</td></tr></table>`:''}
+      ${x.status==='done'&&x.override?`<table style="margin-bottom:6px"><tr><td class="late" style="background:#fbefd3"><b>Completed with an exception</b> on ${e(fmt(x.override.at.slice(0,10)))} by ${e(nm[x.override.by]||'Someone')}. Open at that time: ${x.override.issues.map(s=>e(s)).join(' · ')||'–'}<br><b>Reason:</b> ${x.override.reason?e(x.override.reason):'<span class="late">No reason recorded</span>'}</td></tr></table>`:''}
       <table class="kv"><tr><th>Key point</th><td>${v(x.key)}</td></tr>${c.fields.map(([k,l])=>`<tr><th>${e(l)}</th><td>${v(x.f[k])}</td></tr>`).join('')}</table>`;
     if(c.id==='D1')h+=`<table style="margin-top:6px"><tr><th>Name</th><th>Role</th><th>Department / function</th></tr>${r.team.length?r.team.map(t=>`<tr><td>${v(t.name)}</td><td>${e(t.role)}</td><td>${v(t.dept)}</td></tr>`).join(''):'<tr><td colspan="3">No team members yet</td></tr>'}</table>`;
     if(c.id==='D7')h+=`<table style="margin-top:6px"><tr><th>Prevent recurrence checklist (${r.chk.filter(Boolean).length}/6)</th><th style="width:80px">Result</th></tr>${CHK.map((t,i)=>`<tr><td>${e(t)}</td><td class="${r.chk[i]?'done':'todo'}">${r.chk[i]?'Done':'Not done'}</td></tr>`).join('')}</table>`;
@@ -830,6 +847,8 @@ document.addEventListener('input',e=>{const t=e.target;if(t.id==='q'||t.id==='so
   document.querySelectorAll(`[data-b="${b}"]`).forEach(el=>{if(el!==t){if(el.type==='checkbox')el.checked=v;else el.value=v;grow(el)}});
   grow(t);rLight();if(b.startsWith('meta.'))rHead();if(isStat){rHist();fillNames()}});
 let typeBefore=null;
+/* "Complete with exception" stays off until a reason is typed */
+document.addEventListener('input',e=>{if(e.target.id!=='gate-reason')return;const b=document.querySelector('[data-gate=go]');if(b)b.disabled=!e.target.value.trim()});
 document.addEventListener('change',e=>{const t=e.target;if(!(t.dataset&&t.dataset.r)||!S)return;if(!t.dataset.b.startsWith('actions'))return;
   const m=/^actions\.(\d+)\.type$/.exec(t.dataset.b);let moved=null;
   if(m&&typeBefore&&typeBefore.i===+m[1]){const i=+m[1],a=S.actions[i],prev=typeBefore.prev;typeBefore=null;
@@ -856,7 +875,9 @@ document.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)r
   if(ds.open!=null){openAction(+ds.open);return}
   if(ds.reopen){sel=Math.max(0,D.findIndex(c=>c.id===ds.reopen));gate=null;setStatus(ds.reopen,'doing');return}
   /* the list is read again at the click, so work done since the gate opened counts */
-  if(ds.gate){const g=gate,reason=($('gate-reason')||{}).value||'';gate=null;
+  if(ds.gate){const g=gate,reason=($('gate-reason')||{}).value||'';
+    if(ds.gate==='go'&&!reason.trim()){const f=$('gate-reason');if(f)f.focus();return}   /* the reason is required */
+    gate=null;
     if(ds.gate==='go'&&g){const items=gateFor(g.step);setStatus(g.step,'done',items.length?items:null,reason)}
     else{rDetail();lock();focusStatus()}return}
   if(ds.st){const id=D[sel].id;if(S.d[id].status===ds.st){gate=null;rDetail();lock();focusStatus();return}
