@@ -271,9 +271,102 @@ textarea.grow{min-height:38px;resize:none;field-sizing:content;max-height:14em;o
   .issuelink{min-height:44px;display:inline-flex;align-items:center}
   .chk label{min-height:44px;align-items:center}.chk input{width:20px;height:20px;margin-top:0}}
 @media (prefers-reduced-motion:no-preference){.step,.btn{transition:border-color .15s,box-shadow .15s}}
+/* chart series: two categorical slots (validated light and dark); status colours stay for state */
+:root{--series-1:#2a78d6;--series-2:#eb6834}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--series-1:#3987e5;--series-2:#d95926}}
+:root[data-theme="dark"]{--series-1:#3987e5;--series-2:#d95926}
+/* views */
+.vtabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.vtabs a{padding:8px 14px;color:var(--muted);text-decoration:none;font-weight:600;border-bottom:2px solid transparent;margin-bottom:-1px;min-height:28px;display:inline-flex;align-items:center}
+.vtabs a:hover{color:var(--fg)}
+.vtabs a[aria-current=page]{color:var(--fg);border-bottom-color:var(--accent)}
+/* overview */
+.dash{display:flex;flex-direction:column;gap:20px}
+.att{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.att .panel{display:flex;flex-direction:column;gap:8px;min-width:0}
+.att h2{font-size:1rem;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.att ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.att li{border-top:1px solid var(--line)}
+.att li:first-child{border-top:0}
+.attbtn{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;width:100%;text-align:left;border:0;background:none;padding:8px 6px;margin:0 -6px;border-radius:6px;box-sizing:content-box;align-items:start}
+.attbtn:hover{background:var(--sunken)}
+.attbtn .t{font-weight:600;overflow-wrap:anywhere}
+.attbtn .s{grid-column:1;font-size:.8rem;color:var(--muted);overflow-wrap:anywhere}
+.attbtn .pill{grid-column:2;grid-row:1}
+.charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.chart{display:flex;flex-direction:column;gap:10px;min-width:0}
+.chart h2{font-size:1rem}
+.chart .cap{font-size:.8rem;color:var(--muted);margin:0}
+.hbars{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.hbars li{display:grid;grid-template-columns:minmax(5.5rem,34%) minmax(0,1fr) 2.6rem;gap:10px;align-items:center;font-size:.85rem}
+.hbars .hl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hbars .track{display:flex;gap:2px;height:14px;min-width:0}
+.hbars .fill{height:14px;background:var(--series-1);border-radius:0 4px 4px 0;min-width:0}
+.hbars .fill.bad{background:var(--bad)}
+.hbars .fill.join{border-radius:0}
+.hbars .hv{text-align:right;font-variant-numeric:tabular-nums}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.8rem;color:var(--muted);margin:0;padding:0;list-style:none}
+.legend li{display:inline-flex;gap:6px;align-items:center}
+.legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
+.cols{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px;align-items:end;height:150px;border-bottom:1px solid var(--line);padding-top:16px}
+.cols .wk{display:flex;gap:2px;justify-content:center;align-items:flex-end;height:100%;position:relative}
+.cols .c{width:min(14px,40%);border-radius:4px 4px 0 0;display:block}
+.cols .c1{background:var(--series-1)}.cols .c2{background:var(--series-2)}
+.cols .v{position:absolute;top:-16px;font-size:.7rem;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.colx{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px;font-size:.72rem;color:var(--muted);text-align:center}
+.colx span{white-space:nowrap}
+@media (max-width:560px){.colx span:nth-child(odd){visibility:hidden}}
+.kpi .sub.t-bad{color:var(--bad)}
+/* report header */
+.titlebtn{all:unset;cursor:text;border-radius:4px;outline-offset:3px}
+.titlebtn:hover{text-decoration:underline dashed var(--muted);text-underline-offset:6px}
+.titlebtn:focus-visible{outline:2px solid var(--accent)}
+.titlebtn.untitled{color:var(--muted)}
+.recur{margin:2px 0 0;font-size:.88rem;color:var(--fg);background:var(--accent-soft);border-radius:6px;padding:6px 10px;max-width:70ch}
+.recur a{font-weight:600}
+@media (max-width:860px){.att,.charts{grid-template-columns:minmax(0,1fr)}}
+.isn{width:100%;border-collapse:collapse;table-layout:fixed}
+.isn th,.isn td{border-top:1px solid var(--line);padding:6px 6px 6px 0;vertical-align:top;text-align:left}
+.isn thead th{border-top:0;font-size:.8rem;color:var(--muted);font-weight:600}
+.isn thead th:first-child,.isn tbody th{width:6.5rem}
+.isn tbody th{font-weight:600;font-size:.88rem;padding-top:12px}
+.isn textarea{width:100%;box-sizing:border-box}
+@media (max-width:560px){.isn thead tr,.isn tbody tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:6px}.isn thead th:first-child{display:none}.isn tbody th{grid-column:1/-1;width:auto;padding:10px 0 0;border-top:1px solid var(--line)}.isn tbody td{border-top:0;padding-right:0}}
+.whys{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;counter-reset:w}
+.whys li{display:grid;grid-template-columns:4rem minmax(0,1fr);gap:8px;align-items:start}
+.whys li .lbl{padding-top:9px}
+
+.aibox{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;background:var(--sunken)}
+.aibox .aibar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.aibox .aitext{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.aibox ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.aibox li{display:flex;flex-direction:column;gap:4px;border-top:1px solid var(--line);padding-top:8px}
+.aibox li:first-child{border-top:0;padding-top:0}
+.aibox .aihd{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.aibox .src{font-size:.75rem;color:var(--muted)}
+.ai.panel .aibox{background:none;border:0;padding:0}
+.linkbtn{all:unset;color:var(--accent);font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:2px;border-radius:3px}
+.linkbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 </style>
 
 <div class="wrap">
+  <!-- Overview: what needs attention today, across every 8D -->
+  <div class="view" id="v-dash" hidden>
+    <div class="top">
+      <div class="brand">
+        <h1>8D Overview</h1>
+        <span class="note" id="d-sub">What needs attention today, across every 8D.</span>
+      </div>
+      <div class="tools">
+        <button class="btn" data-createex="1" hidden>Create example</button>
+        <button class="btn primary" data-create="1" hidden>+ New 8D</button>
+      </div>
+    </div>
+    <nav class="vtabs" aria-label="Views"><a href="#dash" aria-current="page">Overview</a><a href="#list">All reports</a></nav>
+    <div class="banner" id="d-note" hidden></div>
+    <div id="dash" class="dash"></div>
+  </div>
+
   <!-- Register of all reports -->
   <div class="view" id="v-list">
     <div class="top">
@@ -288,6 +381,7 @@ textarea.grow{min-height:38px;resize:none;field-sizing:content;max-height:14em;o
         <button class="btn primary" id="b-create" hidden>+ New 8D</button>
       </div>
     </div>
+    <nav class="vtabs" aria-label="Views"><a href="#dash">Overview</a><a href="#list" aria-current="page">All reports</a></nav>
     <div class="banner" id="l-note" hidden></div>
     <section class="kpis" id="l-kpis"></section>
     <section class="panel">
@@ -306,15 +400,17 @@ textarea.grow{min-height:38px;resize:none;field-sizing:content;max-height:14em;o
   <div class="view" id="v-report" hidden>
     <div class="top">
       <div class="brand">
-        <a href="#list" class="note">← 8D Register</a>
-        <h1 id="r-title">8D Report</h1>
+        <a href="#dash" class="note" id="r-back">← Overview</a>
+        <h1><button type="button" id="r-title" class="titlebtn" title="Edit the title">8D Report</button></h1>
         <p class="rsub" id="r-sub"></p>
+        <p class="recur" id="r-recur" hidden></p>
         <span class="note" id="r-who"></span>
       </div>
       <div class="tools">
         <span class="note" id="r-save"></span>
         <span class="note" id="r-xmsg" role="status"></span>
         <button class="btn" id="b-sum">Text summary</button>
+        <button class="btn" id="b-dup">Duplicate</button>
         <button class="btn" id="b-xlsx" hidden>Export Excel</button>
         <button class="btn primary" id="b-pdf" hidden>Export PDF</button>
         <button class="btn quiet-danger" id="b-del">Delete report</button>
@@ -327,13 +423,14 @@ textarea.grow{min-height:38px;resize:none;field-sizing:content;max-height:14em;o
 
     <section class="panel" id="sumbox" hidden>
       <div class="sechead"><h2>8D text summary</h2>
-        <div class="tools"><span class="note" id="copymsg"></span><button class="btn" id="b-copy">Copy</button><button class="btn" id="b-sumclose">Close</button></div></div>
+        <div class="tools"><span class="note" id="copymsg"></span><button class="btn" id="b-tr" hidden>Translate to English</button><button class="btn" id="b-copy">Copy</button><button class="btn" id="b-sumclose">Close</button></div></div>
       <textarea id="sumtext" readonly aria-label="8D text summary"></textarea>
     </section>
 
     <div class="bench">
       <section class="panel detail" id="detail"></section>
       <div class="side">
+        <aside class="panel checks ai" id="aiwrap" hidden></aside>
         <aside class="panel checks" id="checks" aria-live="polite"></aside>
         <aside class="panel checks hist" id="hist"></aside>
       </div>
@@ -412,11 +509,16 @@ const D=[
  {id:'D1',th:'Team',q:'Who has the knowledge, time and authority to solve this problem?',
   fields:[['notes','Team notes','Meeting rhythm, responsibilities, customer contact']]},
  {id:'D2',th:'Problem description',q:'What exactly is wrong? Describe it in quantifiable terms (5W2H).',grid:true,
-  fields:[['statement','Problem statement','Object + defect, quantified. No causes, no solutions.',1],['what','What','Part, product, defect'],['where','Where','Where seen, where on the part'],['when','When','First seen, pattern, production dates'],['who','Who','Who found it, which customer or line'],['why','Why is it a problem','Impact on the customer'],['how','How','How was it detected'],['howmany','How many','Quantity affected, trend, PPM']]},
+  fields:[['statement','Problem statement','Object + defect, quantified. No causes, no solutions.',1],['what','What','Part, product, defect'],['where','Where','Where seen, where on the part'],['when','When','First seen, pattern, production dates'],['who','Who','Who found it, which customer or line'],['why','Why is it a problem','Impact on the customer'],['how','How','How was it detected'],['howmany','How many','Quantity affected, trend, PPM'],
+   ['isw','Is: what','Part, defect that has it',0,'isn'],['inw','Is not: what','Similar parts or defects that do not',0,'isn'],
+   ['ise','Is: where','Line, machine, location on the part',0,'isn'],['ine','Is not: where','Where it could be but is not',0,'isn'],
+   ['ist','Is: when','Dates, shift, first seen',0,'isn'],['int','Is not: when','When it could be but is not',0,'isn'],
+   ['isx','Is: how much','Quantity, rate, trend',0,'isn'],['inx','Is not: how much','How big it could be but is not',0,'isn']]},
  {id:'D3',th:'Containment',q:'How do we protect the customer until the permanent fix is in place?',target:1,
   fields:[['ica','Interim containment','Sorting, 100% inspection, stock quarantine at all locations'],['eff','Effectiveness of containment','Quantities sorted and rejected; how you know no defects escape']]},
  {id:'D4',th:'Root cause',q:'Why did it occur, and why was it not detected? Verify both.',
-  fields:[['occ','Root cause of occurrence','Why the defect was made'],['esc','Root cause of non-detection (escape)','Why the defect was not caught before shipping'],['ver','Verification','How the root causes were confirmed (turn the problem on and off)']]},
+  fields:[['occ','Root cause of occurrence','Why the defect was made'],['esc','Root cause of non-detection (escape)','Why the defect was not caught before shipping'],['ver','Verification','How the root causes were confirmed (turn the problem on and off)'],
+   ['why1','Why 1','Why did the defect occur?',0,'why'],['why2','Why 2','Why did that happen?',0,'why'],['why3','Why 3','And why that?',0,'why'],['why4','Why 4','',0,'why'],['why5','Why 5','',0,'why']]},
  {id:'D5',th:'Corrective actions',q:'Which permanent corrective actions remove the root causes? Prove they work.',target:10,
   fields:[['occ','Corrective action for occurrence','Chosen permanent fix for the occurrence cause'],['esc','Corrective action for escape','Chosen fix for the detection gap'],['ver','Verification before implementation','Trial, test or data showing the actions work without side effects']]},
  {id:'D6',th:'Implement & validate',q:'Are the corrective actions implemented and effective in production?',
@@ -512,7 +614,7 @@ function facts(r){const cur=D.find(c=>r.d[c.id].status!=='done'),o=pd(r.meta.ope
 /* ---------- shared state ---------- */
 let db=null,user=null,dl=null,myId=null,RO=false,loaded=false,dbState='loading';
 let reports={};            // id -> normalized report
-let openId=null,S=null,sel=0,flt='all',gate=null;
+let openId=null,S=null,sel=0,flt='all',gate=null,topView='dash',pendingGo=null;
 const pending=new Set();   // paths edited locally and not yet sent
 let flushT=null,chain=Promise.resolve(),writing=0;
 
@@ -594,7 +696,7 @@ function rList(){
   else if(!all.length)msg='<h2>No 8D reports yet</h2><p>Reports your team opens appear here with their current step, days open and overdue actions.'+(RO?'':' Select "New 8D" to start the first one, or create an example to see a filled-in report.')+'</p>';
   else if(!rows.length)msg='<p>No reports match the search or filter.</p>';
   e.innerHTML=msg;e.hidden=!msg;
-  const can=db&&!RO;$('b-create').hidden=!can;$('b-newex').hidden=!can;$('b-xreg').hidden=!dl||!all.length;
+  const can=db&&!RO;$('b-create').hidden=!can;$('b-newex').hidden=!can;document.querySelectorAll('[data-create],[data-createex]').forEach(b=>b.hidden=!can);$('b-xreg').hidden=!dl||!all.length;
   fillNames()}
 
 /* ---------- report view ---------- */
@@ -612,7 +714,8 @@ function rMeta(){$('meta').innerHTML=
 /* the report's identity: the problem is the heading; number, customer and part under it; edits fold away */
 let metaOpen=false;
 function rHead(){const m=S.meta;
-  $('r-title').textContent=m.title.trim()||'Untitled 8D';
+  const tb=$('r-title');tb.textContent=m.title.trim()||'Untitled 8D · add a title';tb.classList.toggle('untitled',!m.title.trim());tb.disabled=RO;
+  rRecur();
   $('r-sub').innerHTML=[m.no?`<span class="mono">${esc(m.no)}</span>`:'',esc(m.customer),esc(m.part)].filter(Boolean).join(' · ')||'<span class="muted">No 8D number, customer or part yet</span>';
   $('meta').hidden=!metaOpen;const b=$('b-meta');b.setAttribute('aria-expanded',metaOpen);b.textContent=metaOpen?'Done editing':(RO?'Show details':'Edit details')}
 function rLight(){const f=facts(S),o=pd(S.meta.opened);
@@ -661,7 +764,7 @@ function checksFor(S){const w=[],d=S.d,add=(lv,id,t,go,nogate,short,reopen)=>w.p
     if(!S.team.some(m=>m.role==='Team leader'&&m.name.trim()))add('warn','D1','The team has no Team leader.');}
   if(d.D2.status!=='todo'&&!d.D2.f.statement.trim())add('warn','D2','No problem statement yet.');
   else if(d.D2.status!=='todo'&&!/\d/.test(d.D2.f.statement))add('warn','D2','The problem statement has no numbers. Add the quantity or PPM.');
-  if(d.D2.status!=='todo'&&!/\bnot\b|ไม่พบ|ไม่เกิด/i.test(d.D2.f.where+d.D2.f.when))add('info','D2','Also say where or when the problem does not occur (Is / Is Not).');
+  if(d.D2.status!=='todo'&&!(d.D2.f.inw+d.D2.f.ine+d.D2.f.int+d.D2.f.inx).trim()&&!/\bnot\b|ไม่พบ|ไม่เกิด/i.test(d.D2.f.where+d.D2.f.when))add('info','D2','Also say where or when the problem does not occur (Is / Is Not).');
   if(/operator error|human error|operator mistake|careless|not careful|พนักงาน(ทำ)?ผิดพลาด|ประมาท/i.test(d.D4.f.occ))add('bad','D4','The root cause blames the operator. Ask why the process allowed the error, and consider poka-yoke.');
   if(d.D4.status!=='todo'&&!d.D4.f.esc.trim())add('bad','D4','No root cause of escape (non-detection) yet.');
   if(d.D4.status==='done'&&!d.D4.f.ver.trim())add('bad','D4','D4 is complete but the root causes are not verified.','',false,'The root causes are not verified.');
@@ -735,10 +838,20 @@ function rDetail(){const c=D[sel],p='d.'+c.id,x=S.d[c.id];
      <ul>${x.override.issues.map(s=>`<li>${esc(s)}</li>`).join('')}</ul>${x.override.reason?`<span><b>Reason:</b> ${esc(x.override.reason)}</span>`:'<span class="t-warn"><b>No reason recorded.</b></span>'}</div>`:'')+
    `<p class="q">${esc(c.q)}</p>`;
   if(c.id==='D1')h+=`<div class="tblwrap"><table class="team"><thead><tr><th>Name</th><th>Role</th><th>Department / function</th><th></th></tr></thead><tbody>${S.team.map((m,i)=>`<tr><td>${inp('team.'+i+'.name','text','Name','aria-label="Name"')}</td><td>${sl('team.'+i+'.role',ROLES,'Role')}</td><td>${inp('team.'+i+'.dept','text','Department, expertise','aria-label="Department"')}</td><td><button class="x" data-delteam="${i}" aria-label="Remove team member">✕</button></td></tr>`).join('')}</tbody></table></div><div><button class="btn" id="b-addteam">+ Add team member</button></div>`;
-  const fs=c.fields.map(([k,l,ph,wide])=>`<div class="field"${wide?' style="grid-column:1/-1"':''}><label class="lbl" for="${fid(p+'.f.'+k)}">${esc(l)}</label>${tx(p+'.f.'+k,ph,c.grid&&!wide?2:3)}</div>`).join('');
+  const fs=c.fields.filter(f=>!f[4]).map(([k,l,ph,wide])=>`<div class="field"${wide?' style="grid-column:1/-1"':''}><label class="lbl" for="${fid(p+'.f.'+k)}">${esc(l)}</label>${tx(p+'.f.'+k,ph,c.grid&&!wide?2:3)}</div>`).join('');
   h+=c.grid?`<div class="grid2">${fs}</div>`:fs;
+  if(c.id==='D2'&&AI&&!RO)h+=aiBox('d2');
+  if(c.id==='D2'){const g=c.fields.filter(f=>f[4]==='isn'),rows=[];for(let i=0;i<g.length;i+=2)rows.push([g[i],g[i+1]]);
+    h+=`<div class="field"><span class="lbl" id="isn-h">Is / Is Not</span><p class="note" style="margin:0">Compare where the problem is with where it could be but is not. The difference points to the cause.</p>
+      <div class="tblwrap"><table class="isn" aria-labelledby="isn-h"><thead><tr><th scope="col"></th><th scope="col">Is</th><th scope="col">Is not</th></tr></thead><tbody>${rows.map(([a,b])=>{const w=a[1].split(': ')[1];
+      return`<tr><th scope="row">${esc(w[0].toUpperCase()+w.slice(1))}</th><td>${tx(p+'.f.'+a[0],a[2],2).replace('<textarea ','<textarea aria-label="'+esc(a[1])+'" ')}</td><td>${tx(p+'.f.'+b[0],b[2],2).replace('<textarea ','<textarea aria-label="'+esc(b[1])+'" ')}</td></tr>`}).join('')}</tbody></table></div></div>`}
+  if(c.id==='D4'){const g=c.fields.filter(f=>f[4]==='why');
+    h+=`<div class="field"><span class="lbl">5-Why</span><p class="note" style="margin:0">Ask why until you reach a cause you can act on. The last answer is usually the root cause of occurrence.</p>
+      <ol class="whys">${g.map(([k,l,ph])=>`<li><label class="lbl" for="${fid(p+'.f.'+k)}">${esc(l)}</label>${tx(p+'.f.'+k,ph,1)}</li>`).join('')}</ol>
+      ${RO?'':'<div><button class="btn small" id="b-why">Use the last answer as the root cause</button> <span class="note" id="why-msg" role="status"></span></div>'}</div>`}
   if(c.id==='D7')h+=`<div class="field"><span class="lbl">Prevent recurrence checklist</span><ul class="chk">${CHK.map((t,i)=>`<li><label><input type="checkbox" id="f-chk-${i}" data-b="chk.${i}"${S.chk[i]?' checked':''}><span>${esc(t)}</span></label></li>`).join('')}</ul></div>`;
   if(DACT[c.id])h+=dActs(DACT[c.id]);
+  if(AI&&!RO&&(c.id==='D5'||c.id==='D7'))h+=aiBox(c.id==='D5'?'act5':'act7');
   h+=fld(p+'.key','Roadmap summary',tx(p+'.key','One or two lines for the roadmap card, once the fields above are filled in',2));
   h+=`<div class="row">`+fld(p+'.done','Completed on',inp(p+'.done','date'))+(c.target!=null?fld(p+'.target','Target (days from opening)',inp(p+'.target','number','','min="0"')):'')+`</div>`+
     (x.status!=='done'&&pd(x.prevDone)?`<p class="note" style="margin:0">Previously completed ${esc(fmt(x.prevDone))}. That date comes back if you complete this step again.</p>`:'');
@@ -787,7 +900,7 @@ const focusAdd=()=>{const b=document.querySelector('[data-addtype]');if(b)b.focu
 function lock(){growAll();if(!RO)return;document.querySelectorAll('#v-report input,#v-report textarea:not(#sumtext),#v-report select,#v-report [data-st],#v-report [data-addtype],#v-report [data-reopen],#v-report .x,#b-addteam,#b-del').forEach(e=>{e.disabled=true})}
 /* full redraw that keeps the caret where the person is typing */
 function rReport(){const a=document.activeElement,id=a&&a.id,ss=a&&a.selectionStart,se=a&&a.selectionEnd;
-  rMeta();rHead();rDetail();rActs();rLight();rHist();lock();fillNames();
+  rMeta();rHead();rDetail();rActs();rLight();rHist();rAI();lock();fillNames();
   if(id&&/^(d-)?f-/.test(id)){const n=$(id);if(n){n.focus();try{n.setSelectionRange(ss,se)}catch(e){}}}}
 
 /* ---------- export: Excel (SheetJS) and PDF (html2canvas + jsPDF, so any script the team types renders with the page's own fonts) ---------- */
@@ -824,7 +937,7 @@ async function xlsxReport(r){await lib('xlsx');const f=facts(r),m=r.meta,wb=XLSX
   D.forEach(c=>{const x=r.d[c.id],t=tgt(r,c),ov=x.status==='done'&&x.override;sum.push([c.id,c.th,stName(x.status),x.done,t?t.days:'',t?iso(t.due):'',t&&t.late?'Yes':'',ov?'Yes':'',ov?x.override.issues.join(' | '):'',ov?x.override.reason:'',x.key])});
   XLSX.utils.book_append_sheet(wb,sheet(sum,[20,40,13,13,13,13,7,12,50,40,70]),'Summary');
   const det=[['Step','Discipline','Field','Content']];
-  D.forEach(c=>{const x=r.d[c.id];det.push([c.id,c.th,'Key point',x.key]);c.fields.forEach(([k,l])=>det.push([c.id,c.th,l,x.f[k]]))});
+  D.forEach(c=>{const x=r.d[c.id];det.push([c.id,c.th,'Key point',x.key]);c.fields.forEach(([k,l,,,g])=>{if(!g||x.f[k].trim())det.push([c.id,c.th,l,x.f[k]])})});
   XLSX.utils.book_append_sheet(wb,sheet(det,[6,22,34,90]),'D0-D8 details');
   XLSX.utils.book_append_sheet(wb,sheet([['Name','Role','Department / function'],...r.team.map(t=>[t.name,t.role,t.dept])],[30,18,30]),'D1 Team');
   XLSX.utils.book_append_sheet(wb,sheet([['ID','Type','Action','Owner','Due','Status','Overdue'],
@@ -856,7 +969,7 @@ function pdfBlocks(r,nm){const f=facts(r),m=r.meta,o=pd(m.opened),B=[],e=esc,v=s
   D.forEach(c=>{const x=r.d[c.id],t=tgt(r,c);
     let h=`<h2><span>${c.id} · ${e(c.th)}</span><small><span class="${x.status}">${ST[x.status]}</span>${x.done?' · completed '+e(fmt(x.done)):''}${t?` · target day ${t.days}`:''}</small></h2>
       ${x.status==='done'&&x.override?`<table style="margin-bottom:6px"><tr><td class="late" style="background:#fbefd3"><b>Completed with an exception</b> on ${e(fmt(x.override.at.slice(0,10)))} by ${e(nm[x.override.by]||'Someone')}. Open at that time: ${x.override.issues.map(s=>e(s)).join(' · ')||'–'}<br><b>Reason:</b> ${x.override.reason?e(x.override.reason):'<span class="late">No reason recorded</span>'}</td></tr></table>`:''}
-      <table class="kv"><tr><th>Key point</th><td>${v(x.key)}</td></tr>${c.fields.map(([k,l])=>`<tr><th>${e(l)}</th><td>${v(x.f[k])}</td></tr>`).join('')}</table>`;
+      <table class="kv"><tr><th>Key point</th><td>${v(x.key)}</td></tr>${c.fields.filter(q=>!q[4]||x.f[q[0]].trim()).map(([k,l])=>`<tr><th>${e(l)}</th><td>${v(x.f[k])}</td></tr>`).join('')}</table>`;
     if(c.id==='D1')h+=`<table style="margin-top:6px"><tr><th>Name</th><th>Role</th><th>Department / function</th></tr>${r.team.length?r.team.map(t=>`<tr><td>${v(t.name)}</td><td>${e(t.role)}</td><td>${v(t.dept)}</td></tr>`).join(''):'<tr><td colspan="3">No team members yet</td></tr>'}</table>`;
     if(c.id==='D7')h+=`<table style="margin-top:6px"><tr><th>Prevent recurrence checklist (${r.chk.filter(Boolean).length}/6)</th><th style="width:80px">Result</th></tr>${CHK.map((t,i)=>`<tr><td>${e(t)}</td><td class="${r.chk[i]?'done':'todo'}">${r.chk[i]?'Done':'Not done'}</td></tr>`).join('')}</table>`;
     B.push(h)});
@@ -899,22 +1012,156 @@ async function exportRun(kind,btn){const msg=kind==='reg'?$('l-xmsg'):$('r-xmsg'
   finally{busy(false);btn.disabled=false}}
 
 /* ---------- routing ---------- */
+/* ---------- Claude: review, drafting, suggestions, translation ----------
+   Every call starts from a click, shows "Thinking..." until the first words arrive, and can be stopped.
+   If this page may not ask Claude here, the buttons are not shown at all. */
+let AI=null,aiRun=null,aiS={};
+const AI_OFF=['not_granted','sampling_disabled','capability_disabled','unavailable'];
+const AIK={
+  review:{json:true,btn:'Review this 8D',again:'Review again',
+    need:()=>D.some(c=>S.d[c.id].status!=='todo')?'':'Start at least one step first.',
+    prompt:x=>`You are a senior automotive supplier quality engineer. A customer will read the 8D report below. Find the weaknesses they would reject it for: a problem statement that is vague or not quantified, a root cause that is a symptom or blames a person, root causes not verified, no root cause of escape, corrective actions that do not remove the verified root cause, containment without evidence, no read-across or standard update in D7, actions without an owner or due date, dates that do not add up. Say nothing about what is already fine, and do not repeat the same point.\n\nReply with JSON only: {"findings":[{"step":"D0 to D8","severity":"high|medium|low","issue":"one sentence","suggestion":"one concrete sentence: what to write or do"}]}. At most 8 findings, most serious first. Write in English, but quote the report's own words where useful.\n\n<report>\n${x}\n</report>`,
+    pick:j=>(j&&Array.isArray(j.findings)?j.findings:[]).filter(f=>f&&typeof f.issue==='string').slice(0,8).map(f=>({step:/^D[0-8]$/.test(f.step)?f.step:'',sev:['high','medium','low'].includes(f.severity)?f.severity:'medium',issue:String(f.issue).slice(0,400),sug:typeof f.suggestion==='string'?f.suggestion.slice(0,400):''}))},
+  d2:{btn:'Draft the problem statement',again:'Draft again',
+    need:()=>{const f=S.d.D2.f;return(['what','where','when','who','how','howmany'].some(k=>f[k].trim())||S.d.D0.f.symptom.trim())?'':'Fill in a few of the 5W2H fields first.'},
+    prompt:x=>`Write the D2 problem statement for the 8D report below, from its symptom, 5W2H and Is / Is Not notes. Object and defect, quantified (how many, PPM or rate), where and when it was found, and by whom. No causes and no solutions. One or two sentences. Use only facts in the report; where a number is missing write [quantity]. Write in the same language as the notes. Reply with the statement only.\n\n<report>\n${x}\n</report>`},
+  act5:{json:true,btn:'Suggest corrective actions',again:'Suggest again',type:['Corrective: occurrence','Corrective: escape'],
+    need:()=>(S.d.D4.f.occ+S.d.D4.f.esc).trim()?'':'Fill in the root causes in D4 first.',
+    prompt:x=>`From the root causes in D4 of the 8D report below, suggest permanent corrective actions. For the root cause of occurrence and the root cause of escape, give one or two specific actions each: what to change, on which machine, process, document or check, so that an engineer can own it. Do not repeat actions the report already has, and do not suggest containment.\n\nReply with JSON only: {"actions":[{"type":"Corrective: occurrence|Corrective: escape","text":"one sentence"}]}. At most 6. Write in the same language as the report.\n\n<report>\n${x}\n</report>`},
+  act7:{json:true,btn:'Suggest preventive actions',again:'Suggest again',type:['Preventive (systemic)'],
+    need:()=>(S.d.D4.f.occ+S.d.D4.f.esc).trim()?'':'Fill in the root causes in D4 first.',
+    prompt:x=>`From the root causes and corrective actions in the 8D report below, suggest systemic preventive actions for D7: updates to the PFMEA, control plan, work instructions or design rules, and read-across to similar parts, machines and lines. Each one specific enough for an engineer to own. Do not repeat actions the report already has.\n\nReply with JSON only: {"actions":[{"type":"Preventive (systemic)","text":"one sentence"}]}. At most 5. Write in the same language as the report.\n\n<report>\n${x}\n</report>`},
+  tr:{btn:'Translate to English',
+    need:()=>'',
+    prompt:x=>`Translate this 8D report summary into clear, plain English for a customer quality engineer. Keep the layout, line breaks, headings, action IDs, numbers, dates and names exactly as they are. Text that is already English stays as it is. Reply with the translation only.\n\n${x}`}};
+AIK.act5.pick=AIK.act7.pick=null;
+function aiPickActs(k,j){const ok=AIK[k].type;return(j&&Array.isArray(j.actions)?j.actions:[]).filter(a=>a&&typeof a.text==='string'&&a.text.trim()).slice(0,6)
+  .map(a=>({type:ok.includes(a.type)?a.type:ok[0],text:a.text.trim().slice(0,500)}))}
+function aiMsg(c){return c==='cancelled'?'Stopped.':c==='rate_limited'?'Claude is busy right now. Wait a minute, then try again.':c==='refused'?'Claude would not answer this one. Reword the report text and try again.':
+  c==='invalid_json'?'Claude’s answer could not be read. Try again.':c==='input_too_large'?'This report is too long to send in one go.':'Claude could not be reached. Try again in a moment.'}
+function aiReset(){if(aiRun)aiRun.ctl.abort();aiRun=null;aiS={}}
+function aiOff(){AI=null;aiReset();if(S){rDetail();rAI();lock()}trBtn()}
+function trBtn(){const b=$('b-tr');b.hidden=!AI;const busy=aiRun&&aiRun.kind==='tr';b.disabled=!!aiRun&&!busy;
+  b.textContent=busy?'Stop':aiS.tr&&aiS.tr.text&&!aiS.tr.err?'Show original':'Translate to English';
+  if(busy&&aiS.tr&&!aiS.tr.text)$('copymsg').textContent='Thinking…';else if(busy)$('copymsg').textContent='Translating…';else if(aiS.tr&&aiS.tr.err)$('copymsg').textContent=aiS.tr.err;else if(aiS.tr)$('copymsg').textContent='Translated by Claude. Check names and numbers before you send it.'}
+function aiBox(k){const L=AIK[k],s=aiS[k]||{},busy=aiRun&&aiRun.kind===k,other=aiRun&&!busy;
+  let h=`<div class="aibox" id="ai-${k}"><div class="aibar"><button class="btn small${busy?'':''}" data-ai="${k}"${other?' disabled':''}>${busy?'Stop':s.text||s.items?L.again:L.btn}</button>`+
+    `<span class="note" role="status">${busy&&!s.text&&!s.started?'Thinking…':busy?'Writing…':s.err?esc(s.err):s.text||s.items?'From Claude. Check it before you use it.':''}</span></div>`;
+  if(k==='d2'&&s.text)h+=`<p class="aitext">${esc(s.text)}</p>`+(busy?'':`<div class="aibar"><button class="btn small primary" data-aiuse="d2">Use as problem statement</button><button class="btn small" data-aidrop="d2">Discard</button></div>`);
+  if(k==='review'&&s.items)h+=s.items.length?`<ul>${s.items.map(f=>`<li><span class="aihd"><span class="pill ${f.sev==='high'?'bad':f.sev==='medium'?'warn':'info'}">${f.sev}</span>${f.step?`<button class="linkbtn" data-go="s${f.step.slice(1)}">${f.step}</button>`:''}</span><span>${esc(f.issue)}</span>${f.sug?`<span class="note">${esc(f.sug)}</span>`:''}</li>`).join('')}</ul>`:'<p class="note" style="margin:0">Claude found nothing a customer would push back on.</p>';
+  if((k==='act5'||k==='act7')&&s.items)h+=s.items.length?`<ul>${s.items.map((a,i)=>`<li><span class="aihd"><span class="src">${esc(a.type)}</span></span><span>${esc(a.text)}</span><span>${a.added?`<span class="note">Added as ${esc(a.added)}</span>`:`<button class="btn small" data-aiadd="${k}|${i}">+ Add as action</button>`}</span></li>`).join('')}</ul>`:'<p class="note" style="margin:0">No new actions to suggest.</p>';
+  return h+'</div>'}
+function rAI(){const w=$('aiwrap');if(!AI||!S){w.hidden=true;return}w.hidden=false;
+  w.innerHTML=`<h2>Ask Claude</h2><p class="note" style="margin:0">A second pair of eyes before the customer reads it. Nothing is changed until you choose to.</p>`+aiBox('review')}
+function aiPaint(k){if(k==='tr'){trBtn();return}if(k==='review'){rAI();return}const el=$('ai-'+k);if(el)el.outerHTML=aiBox(k)}
+async function aiGo(k){if(!AI||!S)return;
+  if(aiRun){const was=aiRun.kind;aiRun.ctl.abort();if(was===k)return}
+  const L=AIK[k],miss=L.need();if(miss){aiS[k]={err:miss};aiPaint(k);return}
+  const ctl=new AbortController(),rid=openId,st={text:'',items:null,err:'',started:false};aiRun={kind:k,ctl};aiS[k]=st;aiPaint(k);aiOthers(k);
+  const src=k==='tr'?$('sumtext').value:summary(),opts={signal:ctl.signal,cache:k==='tr'};
+  try{
+    if(L.json){opts.onText=()=>{if(!st.started){st.started=true;aiPaint(k)}};const j=await AI.json(L.prompt(src),opts);st.items=k==='review'?L.pick(j):aiPickActs(k,j)}
+    else{opts.onText=({text})=>{st.text=text;if(!st.started){st.started=true;aiPaint(k)}if(k==='tr'){$('sumtext').value=text}else{const n=document.querySelector('#ai-'+k+' .aitext');n?n.textContent=text:aiPaint(k)}};
+      const r=await AI(L.prompt(src),opts);st.text=(r.text||'').trim();if(k==='tr')$('sumtext').value=st.text;if(r.truncated)st.err='The answer was cut short.'}
+  }catch(e){const c=e&&e.code;if(AI_OFF.includes(c)){if(openId===rid)aiOff();return}
+    st.err=aiMsg(c);if(c==='cancelled'&&k==='tr'){st.text='';$('sumtext').value=src}else if(c!=='cancelled'&&!st.text){st.text=''}}
+  if(aiRun&&aiRun.ctl===ctl)aiRun=null;if(openId!==rid||aiS[k]!==st)return;
+  aiPaint(k);aiOthers(k)}
+/* while one call runs, the other Claude buttons wait */
+function aiOthers(k){Object.keys(AIK).forEach(o=>{if(o!==k)aiPaint(o)})}
+
+/* ---------- overview ---------- */
+const normPart=v=>String(v||'').trim().toLowerCase().replace(/\s+/g,' ');
+/* other 8Ds on the same part: a repeat is the first thing a customer asks about */
+function related(id,r){const p=normPart(r.meta.part);if(!p)return[];
+  return Object.entries(reports).filter(([k,x])=>k!==id&&normPart(x.meta.part)===p).map(([k,x])=>({id:k,r:x,f:facts(x)}))}
+function rRecur(){const el=$('r-recur');if(!S){el.hidden=true;return}const rel2=related(openId,S);
+  if(!rel2.length){el.hidden=true;return}
+  const first=rel2.slice(0,3).map(({id,r,f})=>`<a href="#r-${esc(id)}">${esc(r.meta.no||'an 8D')}</a> (${f.cur?esc(f.cur.id)+' in progress':'closed'})`).join(', ');
+  el.innerHTML=`Same part as ${first}${rel2.length>3?` and ${rel2.length-3} more`:''}. A repeat: check that the earlier corrective actions held, and say so in D4 and D7.`;el.hidden=false}
+const daysTxt=n=>n===0?'today':Math.abs(n)===1?'1 day':Math.abs(n)+' days';
+function hbars(rows,max,empty){if(!rows.length)return`<p class="note" style="margin:0">${empty}</p>`;
+  return`<ul class="hbars">${rows.map(r=>{const segs=r.segs||[{v:r.value,cls:''}],tot=segs.reduce((n,s)=>n+s.v,0);
+    return`<li title="${esc(r.label)}: ${esc(r.tip||String(tot))}"><span class="hl">${esc(r.label)}</span><span class="track">${segs.filter(s=>s.v>0).map((s,i,a)=>`<span class="fill${s.cls?' '+s.cls:''}${i<a.length-1?' join':''}" style="width:${max?s.v/max*100:0}%"></span>`).join('')}</span><span class="hv mono">${tot}</span></li>`}).join('')}</ul>`}
+function rDash(){
+  const all=Object.entries(reports).map(([id,r])=>({id,r,f:facts(r)})),open=all.filter(x=>x.f.cur);
+  const el=$('dash'),can=db&&!RO;document.querySelectorAll('[data-create],[data-createex]').forEach(b=>b.hidden=!can);
+  if(dbState==='none'){el.innerHTML='<div class="panel empty"><h2>Shared data is not available here</h2><p>Open this page in claude.ai while signed in to see your team\'s 8D reports.</p></div>';return}
+  if(dbState==='error'){el.innerHTML='<div class="panel empty"><h2>Reports could not be loaded</h2><p>The connection to the data store was lost. Reload this page to try again.</p></div>';return}
+  if(!loaded&&!all.length){el.innerHTML='<div class="panel empty"><p>Loading your 8D reports…</p></div>';return}
+  if(!all.length){el.innerHTML='<div class="panel empty"><h2>No 8D reports yet</h2><p>Once reports exist, this page shows what needs attention today: overdue actions, targets coming due, and exceptions still open.'+(RO?'':' Select "+ New 8D" to start, or create an example to see it filled in.')+'</p></div>';return}
+  /* what needs attention */
+  const od=[];all.forEach(({id,r})=>r.actions.forEach((a,i)=>{if(overdue(a)&&!blankA(a))od.push({id,r,a,i,late:diff(pd(a.due),today())})}));od.sort((p,q)=>q.late-p.late);
+  const due=[];open.forEach(({id,r})=>D.forEach(c=>{const t=tgt(r,c);if(!t||r.d[c.id].status==='done')return;const left=diff(today(),t.due);if(left<=3)due.push({id,r,c,left})}));due.sort((p,q)=>p.left-q.left);
+  const exs=[];all.forEach(({id,r})=>D.forEach(c=>{const x=r.d[c.id];if(x.status!=='done'||!x.override)return;
+    const still=(x.override.ids||[]).filter(aid=>{const a=r.actions.find(q=>q.id===aid);return a&&isOpen(a)});if(still.length)exs.push({id,r,c,still})}));
+  const more=(k,lim)=>k>lim?`<li class="note" style="padding:6px 0">and ${k-lim} more</li>`:'';
+  const att=`<section class="att" aria-label="Needs attention today">
+    <div class="panel"><h2>Overdue actions <span class="mono">${od.length}</span></h2>${od.length?`<ul>${od.slice(0,8).map(o=>`<li><button class="attbtn" data-gotor="${esc(o.id)}|a${o.i}"><span class="t">${esc(o.a.id)} ${esc(o.a.text)}</span><span class="pill bad">${daysTxt(o.late)} late</span><span class="s">${esc(o.r.meta.no||'')} · ${esc(o.a.owner)||'No owner'}</span></button></li>`).join('')}${more(od.length,8)}</ul>`:'<p class="note" style="margin:0">Nothing is overdue.</p>'}</div>
+    <div class="panel"><h2>Targets due or missed <span class="mono">${due.length}</span></h2>${due.length?`<ul>${due.slice(0,8).map(o=>`<li><button class="attbtn" data-gotor="${esc(o.id)}|s${D.indexOf(o.c)}"><span class="t">${esc(o.c.id)} ${esc(o.c.th)}</span><span class="pill ${o.left<0?'bad':'warn'}">${o.left<0?daysTxt(o.left)+' late':o.left===0?'due today':'in '+daysTxt(o.left)}</span><span class="s">${esc(o.r.meta.no||'')} · ${esc(o.r.meta.title)||'Untitled'}</span></button></li>`).join('')}${more(due.length,8)}</ul>`:'<p class="note" style="margin:0">No D3, D5 or D8 target is due in the next 3 days.</p>'}</div>
+    <div class="panel"><h2>Exceptions still open <span class="mono">${exs.length}</span></h2>${exs.length?`<ul>${exs.slice(0,8).map(o=>`<li><button class="attbtn" data-gotor="${esc(o.id)}|s${D.indexOf(o.c)}"><span class="t">${esc(o.c.id)} completed with ${esc(o.still.join(', '))} open</span><span class="pill ovr">exception</span><span class="s">${esc(o.r.meta.no||'')} · ${esc(o.r.meta.title)||'Untitled'}</span></button></li>`).join('')}${more(exs.length,8)}</ul>`:'<p class="note" style="margin:0">No exception has an issue still open.</p>'}</div>
+  </section>`;
+  /* headline numbers */
+  const avg=open.length?Math.round(open.reduce((s,x)=>s+(x.f.days||0),0)/open.length):null;
+  let mT=0,mOk=0;all.forEach(({r})=>['D3','D5','D8'].forEach(id=>{const c=D.find(q=>q.id===id),t=tgt(r,c),x=r.d[id];if(t&&x.status==='done'&&pd(x.done)){mT++;if(pd(x.done)<=t.due)mOk++}}));
+  const kp=`<section class="kpis">
+    <div class="kpi"><span class="lbl">Open 8Ds</span><b class="mono">${open.length}</b><span class="sub muted">of ${all.length} in total</span></div>
+    <div class="kpi"><span class="lbl">Average days open</span><b class="mono">${avg==null?'–':avg}</b><span class="sub muted">open reports only</span></div>
+    <div class="kpi"><span class="lbl">Milestones on time</span><b class="mono">${mT?Math.round(mOk/mT*100)+'%':'–'}</b><span class="sub muted">${mT?`${mOk} of ${mT} D3, D5 and D8 targets met`:'No D3, D5 or D8 completed yet'}</span></div>
+    <div class="kpi"><span class="lbl">Overdue actions</span><b class="mono ${od.length?'t-bad':''}">${od.length}</b><span class="sub ${od.length?'t-bad':'muted'}">${od.length?'across '+plural(new Set(od.map(o=>o.id)).size,'report'):'none overdue'}</span></div>
+  </section>`;
+  /* where work sits, and how old it is */
+  const byStep=D.map(c=>({label:`${c.id} ${c.th}`,value:open.filter(x=>x.f.cur.id===c.id).length}));
+  const sMax=Math.max(1,...byStep.map(r=>r.value));
+  const ages=[['0–10 days',0,10],['11–30 days',11,30],['31–60 days',31,60],['Over 60 days',61,1e9]].map(([l,a,b])=>({label:l,value:open.filter(x=>(x.f.days||0)>=a&&(x.f.days||0)<=b).length}));
+  const aMax=Math.max(1,...ages.map(r=>r.value));
+  /* who holds the open actions */
+  const own={};all.forEach(({r})=>r.actions.forEach(a=>{if(!isOpen(a)||blankA(a))return;const k=a.owner.trim()||'No owner';own[k]=own[k]||{open:0,late:0};overdue(a)?own[k].late++:own[k].open++}));
+  const ownRows=Object.entries(own).map(([k,v])=>({label:k,segs:[{v:v.open,cls:''},{v:v.late,cls:'bad'}],tip:`${v.open+v.late} open, ${v.late} overdue`,t:v.open+v.late})).sort((a,b)=>b.t-a.t).slice(0,8);
+  const oMax=Math.max(1,...ownRows.map(r=>r.t));
+  /* repeats */
+  const cnt=(key)=>{const m={};all.forEach(({r})=>{const v=r.meta[key].trim();if(v){const k=key==='part'?normPart(v):v;m[k]=m[k]||{label:v,value:0};m[k].value++}});return Object.values(m).sort((a,b)=>b.value-a.value).slice(0,6)};
+  const parts=cnt('part'),custs=cnt('customer'),pMax=Math.max(1,...parts.map(r=>r.value)),cMax=Math.max(1,...custs.map(r=>r.value));
+  /* opened and closed per week, last 8 weeks (weeks start on Monday) */
+  const mon=d=>{const x=new Date(d);x.setDate(x.getDate()-((x.getDay()+6)%7));return x};
+  const w0=mon(today()),weeks=[...Array(8)].map((_,i)=>addDays(w0,(i-7)*7));
+  const wk=d=>{if(!d)return -1;const m=mon(d);return weeks.findIndex(w=>diff(w,m)===0)};
+  const opened=weeks.map(()=>0),closed=weeks.map(()=>0);
+  all.forEach(({r})=>{const a=wk(pd(r.meta.opened));if(a>=0)opened[a]++;if(r.d.D8.status==='done'){const b=wk(pd(r.d.D8.done));if(b>=0)closed[b]++}});
+  const wMax=Math.max(1,...opened,...closed),wl=d=>d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+  const trend=`<div class="cols" role="img" aria-label="8Ds opened and closed per week, last 8 weeks">${weeks.map((w,i)=>`<div class="wk" title="Week of ${wl(w)}: ${opened[i]} opened, ${closed[i]} closed"><span class="c c1" style="height:${opened[i]/wMax*100}%"></span><span class="c c2" style="height:${closed[i]/wMax*100}%"></span></div>`).join('')}</div>
+    <div class="colx" aria-hidden="true">${weeks.map(w=>`<span>${wl(w)}</span>`).join('')}</div>
+    <table class="sr"><caption>8Ds opened and closed per week</caption><tr><th>Week of</th><th>Opened</th><th>Closed</th></tr>${weeks.map((w,i)=>`<tr><td>${wl(w)}</td><td>${opened[i]}</td><td>${closed[i]}</td></tr>`).join('')}</table>`;
+  el.innerHTML=att+kp+`<section class="charts">
+    <div class="panel chart"><h2>Open 8Ds by current step</h2><p class="cap">Where work is waiting</p>${hbars(byStep,sMax,'No open 8Ds.')}</div>
+    <div class="panel chart"><h2>Age of open 8Ds</h2><p class="cap">Days since each report was opened</p>${hbars(ages,aMax,'No open 8Ds.')}</div>
+    <div class="panel chart"><h2>Open actions by owner</h2><ul class="legend"><li><i style="background:var(--series-1)"></i>Open, on time</li><li><i style="background:var(--bad)"></i>Overdue</li></ul>${hbars(ownRows,oMax,'No open actions.')}</div>
+    <div class="panel chart"><h2>Opened and closed per week</h2><ul class="legend"><li><i style="background:var(--series-1)"></i>Opened ${opened.reduce((a,b)=>a+b,0)}</li><li><i style="background:var(--series-2)"></i>Closed ${closed.reduce((a,b)=>a+b,0)}</li></ul>${trend}</div>
+    <div class="panel chart"><h2>8Ds by part</h2><p class="cap">A part with more than one 8D is a repeat</p>${hbars(parts,pMax,'No parts recorded yet.')}</div>
+    <div class="panel chart"><h2>8Ds by customer</h2>${hbars(custs,cMax,'No customers recorded yet.')}</div>
+  </section>`}
+
+/* the overview is the landing page; "All reports" is the register */
+const rTop=()=>topView==='list'?rList():rDash();
 function route(){flush();const h=location.hash.slice(1),id=h.startsWith('r-')?h.slice(2):null;
-  if(id!==openId){pending.clear();S=null;gate=null;openId=id;hideToast();saveNote('');banner('r-note','');$('sumbox').hidden=true;$('r-xmsg').textContent=''}
+  if(!id)topView=h==='list'?'list':'dash';
+  if(id!==openId){aiReset();pending.clear();S=null;gate=null;openId=id;hideToast();saveNote('');banner('r-note','');$('sumbox').hidden=true;$('r-xmsg').textContent=''}
   show()}
 function show(){
   if(openId){const r=reports[openId];
     if(!r){if(loaded||dbState!=='loading'){openId=null;banner('l-note','That report was not found. It may have been deleted.');location.hash='list';return}
-      $('v-list').hidden=false;$('v-report').hidden=true;rList();return}
+      $('v-list').hidden=topView!=='list';$('v-dash').hidden=topView!=='dash';$('v-report').hidden=true;rTop();return}
     if(!S){S=clone(r);sel=Math.max(0,D.findIndex(c=>S.d[c.id].status!=='done'));metaOpen=!S.meta.title.trim()&&!RO;rReport();
       /* actions saved before ids existed were numbered on load; save those numbers so they are the same for everyone from now on */
       if(S._ids&&!RO&&db){S._ids=false;touch('actions');touch('actSeq')}}
-    $('v-list').hidden=true;$('v-report').hidden=false}
-  else{$('v-list').hidden=false;$('v-report').hidden=true;rList()}}
+    const back=$('r-back');back.href='#'+topView;back.textContent=topView==='list'?'← All reports':'← Overview';
+    $('v-list').hidden=true;$('v-dash').hidden=true;$('v-report').hidden=false;
+    if(pendingGo){const g=pendingGo;pendingGo=null;setTimeout(()=>goTo(g),0)}}
+  else{$('v-list').hidden=topView!=='list';$('v-dash').hidden=topView!=='dash';$('v-report').hidden=true;rTop()}}
 window.addEventListener('hashchange',route);
 
 /* another person's change arrives: take it, keep what this person is still typing */
-function incoming(){if(!openId)return rList();const r=reports[openId];
+function incoming(){if(!openId)return rTop();const r=reports[openId];
   if(!r){if(S||loaded){S=null;openId=null;pending.clear();banner('l-note','The report you had open was deleted by someone else.');location.hash='list';show()}return}
   if(!S)return show();
   const n=clone(r),old=S;
@@ -951,10 +1198,25 @@ function grow(el){if(GROW_CSS||!el||!el.classList||!el.classList.contains('grow'
 const growAll=()=>document.querySelectorAll('textarea.grow').forEach(grow);
 document.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;const ds=t.dataset;
   if(ds.flt){flt=ds.flt;document.querySelectorAll('#flt button').forEach(b=>b.setAttribute('aria-pressed',b===t));rList();return}
-  if(t.id==='b-create'||t.id==='b-newex'){create(t.id==='b-newex',t);return}
+  if(t.id==='b-create'||t.id==='b-newex'||ds.create||ds.createex){create(t.id==='b-newex'||!!ds.createex,t);return}
+  if(ds.gotor){const[rid,go]=ds.gotor.split('|');pendingGo=go||null;location.hash='r-'+rid;return}
   if(t.id==='b-xreg'){exportRun('reg',t);return}
   if(!S)return;
   if(t.id==='b-pdf'){exportRun('pdf',t);return}
+  if(ds.ai){aiGo(ds.ai);return}
+  if(t.id==='b-tr'){if(aiS.tr&&!aiRun&&aiS.tr.text){delete aiS.tr;$('sumtext').value=summary();trBtn();return}aiGo('tr');return}
+  if(ds.aiuse){const s2=aiS.d2;if(!s2||!s2.text||RO)return;const was=S.d.D2.f.statement;S.d.D2.f.statement=s2.text;touch('d.D2.f.statement');delete aiS.d2;rDetail();rChecks();lock();
+    const n=$(fid('d.D2.f.statement'));if(n)n.focus();showToast('Problem statement replaced with the draft.',()=>{S.d.D2.f.statement=was;touch('d.D2.f.statement');rDetail();rChecks();lock()});return}
+  if(ds.aidrop){delete aiS[ds.aidrop];aiPaint(ds.aidrop);return}
+  if(ds.aiadd){if(RO)return;const[k,i]=ds.aiadd.split('|'),it=aiS[k]&&aiS[k].items&&aiS[k].items[+i];if(!it||it.added)return;
+    const a=newAction(it.type);a.text=it.text;it.added=a.id;logEv(`Action ${a.id} added from a Claude suggestion`);refreshActs();rLight();rHist();fillNames();return}
+  if(t.id==='b-why'){if(RO)return;const f=S.d.D4.f,last=['why5','why4','why3','why2','why1'].map(k=>f[k].trim()).find(Boolean),m=$('why-msg');
+    if(!last){m.textContent='Answer at least one why first.';return}
+    if(f.occ.trim()===last){m.textContent='That is already the root cause.';return}
+    const was=f.occ;f.occ=last;touch('d.D4.f.occ');const n=$(fid('d.D4.f.occ'));if(n){n.value=last;n.focus()}rChecks();
+    m.textContent='';showToast('Root cause of occurrence filled in from the 5-Why.',()=>{S.d.D4.f.occ=was;touch('d.D4.f.occ');rDetail();rChecks()});return}
+  if(t.id==='b-dup'){if(RO)return;create(false,t,S);return}
+  if(t.id==='r-title'){if(RO)return;metaOpen=true;rHead();const n=$(fid('meta.title'));if(n){n.focus();n.select()}return}
   if(t.id==='b-xlsx'){exportRun('xlsx',t);return}
   if(ds.step!=null){sel=+ds.step;gate=null;rDetail();rLight();lock();toDetail();return}
   if(ds.go){goTo(ds.go);return}
@@ -995,7 +1257,7 @@ document.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)r
       const id=openId;pending.clear();clearTimeout(flushT);chain=chain.then(()=>db.collection('reports').doc(id).delete()).then(()=>{},()=>banner('l-note','The report could not be deleted.'));
       S=null;openId=null;delete reports[id];location.hash='list'}
     else{ds.arm='1';t.textContent='Select again to delete for good';t.classList.add('danger');t._tm=setTimeout(()=>{delete ds.arm;t.textContent='Delete report';t.classList.remove('danger')},4000)}return}
-  if(t.id==='b-sum'){$('sumtext').value=summary();$('copymsg').textContent='';const b=$('sumbox');b.hidden=false;b.scrollIntoView({block:'nearest'});return}
+  if(t.id==='b-sum'){if(aiRun&&aiRun.kind==='tr')aiRun.ctl.abort();delete aiS.tr;trBtn();$('sumtext').value=summary();$('copymsg').textContent='';const b=$('sumbox');b.hidden=false;b.scrollIntoView({block:'nearest'});return}
   if(t.id==='b-sumclose'){$('sumbox').hidden=true;return}
   if(t.id==='b-copy'){const ta=$('sumtext'),m=$('copymsg');
     const fb=()=>{ta.focus();ta.select();m.textContent='Text selected. Press Ctrl+C to copy.'};
@@ -1027,10 +1289,13 @@ function goTo(go){
   if(go[0]==='s'){sel=+go.slice(1);gate=null;rDetail();rLight();lock();toDetail(true);$('d-h').focus({preventScroll:true});return}
   if(go[0]==='a')openAction(+go.slice(1))}
 
-async function create(ex,btn){if(!db||RO)return;btn.disabled=true;
+/* a new report: blank, the example, or a copy of an earlier 8D (customer, part, team, D1 and D2 carry over; statuses, dates and actions start fresh) */
+async function create(ex,btn,src){if(!db||RO)return;btn.disabled=true;
   const r=ex?example():blank(),now=new Date().toISOString(),id=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
-  if(!ex){const y=new Date().getFullYear(),n=Object.values(reports).filter(x=>x.meta.no.startsWith('8D-'+y+'-')).length+1;r.meta.no='8D-'+y+'-'+String(n).padStart(3,'0')}
-  r.createdBy=r.updatedBy=myId||'';r.createdAt=r.updatedAt=now;r.log=[{t:now,by:myId||'',m:'8D report opened'}];
+  if(src){r.meta.title=('Copy of '+src.meta.title.trim()).trim();r.meta.customer=src.meta.customer;r.meta.part=src.meta.part;
+    r.team=clone(src.team);r.d.D1.f=clone(src.d.D1.f);r.d.D2.f=clone(src.d.D2.f)}
+  if(!ex){const y=new Date().getFullYear(),n=Math.max(0,...Object.values(reports).map(x=>{const m=x.meta.no.match(new RegExp('^8D-'+y+'-(\d+)$'));return m?+m[1]:0}))+1;/* highest number this year + 1, so a deleted report never causes a repeat */r.meta.no='8D-'+y+'-'+String(n).padStart(3,'0')}
+  r.createdBy=r.updatedBy=myId||'';r.createdAt=r.updatedAt=now;r.log=[{t:now,by:myId||'',m:src?`8D report opened as a copy of ${src.meta.no||'an earlier 8D'}`:'8D report opened'}];
   try{await db.collection('reports').doc(id).set(r);reports[id]=norm(r);banner('l-note','');location.hash='r-'+id}
   catch(e){if(e&&e.code==='invalid_argument'){RO=true;banner('l-note','You have view-only access, so you cannot open a new report.')}
     else banner('l-note',e&&e.code==='quota_exceeded'?'Storage is full. Delete old reports before opening a new one.':'The report could not be created. Try again.');rList()}
@@ -1049,7 +1314,8 @@ function summary(){const m=S.meta,L=[];
 route();
 (async()=>{
   const cl=window.claude;
-  if(cl&&cl.use){[db,user,dl]=await Promise.all([cl.use('db'),cl.use('user'),cl.use('downloads')])}
+  if(cl&&cl.use){[db,user,dl]=await Promise.all([cl.use('db'),cl.use('user'),cl.use('downloads')]);
+    try{AI=await cl.use('sample')}catch(e){AI=null}}
   $('b-pdf').hidden=$('b-xlsx').hidden=!dl;
   if(!db){dbState='none';show();return}
   if(user){myId=await user.id();RO=(await user.can('data.write'))===false}
@@ -1057,7 +1323,7 @@ route();
   db.collection('reports').onSnapshot(snap=>{
     const next={};snap.docs.forEach(d=>{const b=d.data();if(b)next[d.id]=norm(b)});reports=next;
     if(!snap.metadata.fromCache){if(!loaded)banner('l-note','');loaded=true;dbState='ok';clearTimeout(slow)}
-    incoming();if(!openId)rList()
+    incoming();if(!openId)rTop()
   },()=>{clearTimeout(slow);dbState='error';loaded=true;banner('l-note','');show()});
   show();
 })();
