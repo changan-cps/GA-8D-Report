@@ -4,7 +4,7 @@
 <style>
 /* Layout: register of all 8D reports (shared) -> open one: header record, KPI strip, D0-D8 roadmap rail, two-column workbench (discipline form | checks + history), shared action table */
 :root{
-  --bg:#f3f5f8; --surface:#ffffff; --sunken:#e9edf2; --line:#d5dbe4;
+  --bg:#f3f5f8; --surface:#ffffff; --sunken:#e9edf2; --line:#d5dbe4; --field:#7a889b;
   --fg:#17212e; --muted:#5b6878; --accent:#1d5fa8; --accent-soft:#e1ecf8; --on-accent:#ffffff;
   --ok:#1f7a4d; --ok-soft:#e0f2e8; --warn:#9a6200; --warn-soft:#fbefd3; --bad:#b3261e; --bad-soft:#fbe4e2;
   --display:"IBM Plex Sans","IBM Plex Sans Thai","Segoe UI",Tahoma,sans-serif;
@@ -12,12 +12,12 @@
   --mono:"IBM Plex Mono",Consolas,monospace;
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
-  --bg:#11161d; --surface:#1a212b; --sunken:#141a22; --line:#2e3846;
+  --bg:#11161d; --surface:#1a212b; --sunken:#141a22; --line:#2e3846; --field:#6b7a8e;
   --fg:#e6ebf2; --muted:#9aa7b8; --accent:#6aa9ee; --accent-soft:#1c3250; --on-accent:#0c1622;
   --ok:#5ec391; --ok-soft:#173526; --warn:#e3b04b; --warn-soft:#3a2e12; --bad:#f08a82; --bad-soft:#40201e;
   color-scheme:dark } }
 :root[data-theme="dark"]{
-  --bg:#11161d; --surface:#1a212b; --sunken:#141a22; --line:#2e3846;
+  --bg:#11161d; --surface:#1a212b; --sunken:#141a22; --line:#2e3846; --field:#6b7a8e;
   --fg:#e6ebf2; --muted:#9aa7b8; --accent:#6aa9ee; --accent-soft:#1c3250; --on-accent:#0c1622;
   --ok:#5ec391; --ok-soft:#173526; --warn:#e3b04b; --warn-soft:#3a2e12; --bad:#f08a82; --bad-soft:#40201e;
   color-scheme:dark }
@@ -51,7 +51,7 @@ button:disabled{cursor:not-allowed;opacity:.55}
 .meta{display:grid;grid-template-columns:2fr 1fr 1fr 1.4fr 1.4fr;gap:12px}
 .field{display:flex;flex-direction:column;gap:4px;min-width:0}
 input[type=text],input[type=search],input[type=date],input[type=number],textarea,select{
-  font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;width:100%;box-sizing:border-box;min-width:0}
+  font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--field);border-radius:6px;padding:7px 9px;width:100%;box-sizing:border-box;min-width:0}
 textarea{resize:vertical;min-height:64px;line-height:1.5}
 input:focus,textarea:focus,select:focus{outline:2px solid var(--accent);outline-offset:0;border-color:var(--accent)}
 input:disabled,textarea:disabled,select:disabled{opacity:.8}
@@ -79,6 +79,7 @@ input:disabled,textarea:disabled,select:disabled{opacity:.8}
 .step .hd{display:flex;justify-content:space-between;align-items:center;gap:4px}
 .step .id{font-family:var(--mono);font-weight:600;font-size:.95rem}
 .step .nm{font-family:var(--display);font-weight:600;font-size:.86rem;line-height:1.3}
+.step .snm{display:none}
 .step .key{font-size:.76rem;color:var(--muted);line-height:1.45;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
 .step .ft{font-size:.72rem;margin-top:auto;line-height:1.4}
 .dot{width:18px;height:18px;border-radius:50%;display:inline-grid;place-items:center;font-size:.7rem;font-weight:700;flex:none;border:2px solid var(--line);color:transparent}
@@ -151,6 +152,9 @@ td.n{font-family:var(--mono);color:var(--muted);padding-top:11px;width:3.6em;whi
 .dact .n{grid-row:1/3;padding-top:8px;color:var(--muted);font-size:.85rem}
 .dact>select{grid-column:3;grid-row:1}
 .dmeta{grid-column:2/-1;display:grid;grid-template-columns:minmax(0,1.8fr) minmax(0,1fr) minmax(0,1.2fr) auto;gap:8px;align-items:start}
+.dmeta .x{margin-top:16px}
+.fcell{display:flex;flex-direction:column;gap:2px;min-width:0}
+.fcell .lbl{font-size:.68rem}
 .dmeta input{padding:5px 8px;font-size:.88rem}
 .issuelink{border:0;background:none;padding:0;font:inherit;font-size:.9rem;color:var(--accent);text-decoration:underline;text-underline-offset:3px}
 .issuelink:hover{color:var(--fg)}
@@ -170,6 +174,10 @@ textarea.grow{min-height:38px;resize:none;field-sizing:content;max-height:14em;o
 /* register */
 .filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
 .filters input{flex:1 1 220px;max-width:340px}
+.sortl{display:flex;gap:8px;align-items:center;margin-left:auto}
+.sortl select{width:auto}
+.seg .cnt{font-family:var(--mono);font-size:.78rem;opacity:.85}
+.seg{flex-wrap:wrap}
 .reg th{padding:8px 10px;border-bottom:1px solid var(--line)}
 .reg td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
 .reg tr:last-child td{border-bottom:0}
@@ -208,19 +216,20 @@ textarea.grow{min-height:38px;resize:none;field-sizing:content;max-height:14em;o
 @media (max-width:860px){.bench{grid-template-columns:minmax(0,1fr)}.kpis{grid-template-columns:repeat(2,1fr)}}
 /* phone: roadmap becomes one row of D0-D8 chips; the selected step's name is the detail heading */
 @media (max-width:560px){
-  .road{grid-template-columns:repeat(9,minmax(0,1fr));gap:4px}
-  .step{align-items:center;padding:7px 0 6px;min-height:44px;border-top-width:3px;gap:4px}
+  .road{grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+  .step{align-items:center;padding:8px 2px 7px;min-height:64px;border-top-width:3px;gap:3px}
   .step .hd{flex-direction:column;gap:4px}
-  .step .id{font-size:.8rem}
+  .step .id{font-size:.85rem}
   .step .nm,.step .key,.step .ft{display:none}
+  .step .snm{display:block;font-size:.68rem;line-height:1.2;color:var(--muted);text-align:center;max-width:100%;overflow-wrap:anywhere}
   .grid2,.chk,.meta{grid-template-columns:minmax(0,1fr)}
   #r-title{font-size:1.3rem}
   .dact{grid-template-columns:auto minmax(0,1fr)}
   .dact .n{grid-row:auto}
   .dact>select{grid-column:2;grid-row:auto}
   .dmeta{grid-column:2;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
-  .dmeta select{grid-column:1/-1}
-  .dmeta .x{grid-column:1/-1;justify-self:end}}
+  .dmeta .fcell:first-child{grid-column:1/-1}
+  .dmeta .x{grid-column:1/-1;justify-self:end;margin-top:0}}
 /* phone: the register becomes one card per report, so the current step and overdue flags stay on screen */
 @media (max-width:640px){
   .reg thead{display:none}
@@ -247,6 +256,8 @@ textarea.grow{min-height:38px;resize:none;field-sizing:content;max-height:14em;o
 /* touch: 44px targets */
 @media (pointer:coarse),(max-width:560px){
   .x,.btn,.seg button{min-height:44px}.x{min-width:44px}
+  .dmeta select,.dmeta input,.dact>select,.dact textarea,.gate input,.sortl select,.filters input{min-height:44px}
+  .issuelink{min-height:44px;display:inline-flex;align-items:center}
   .chk label{min-height:44px;align-items:center}.chk input{width:20px;height:20px;margin-top:0}}
 @media (prefers-reduced-motion:no-preference){.step,.btn{transition:border-color .15s,box-shadow .15s}}
 </style>
@@ -271,9 +282,9 @@ textarea.grow{min-height:38px;resize:none;field-sizing:content;max-height:14em;o
     <section class="panel">
       <div class="filters">
         <input type="search" id="q" placeholder="Search number, problem, customer, part" aria-label="Search">
-        <div class="seg" role="group" aria-label="Filter by status" id="flt">
-          <button data-flt="all" aria-pressed="true">All</button><button data-flt="open" aria-pressed="false">Open</button><button data-flt="late" aria-pressed="false">Late</button><button data-flt="closed" aria-pressed="false">Closed</button>
-        </div>
+        <div class="seg" role="group" aria-label="Filter by status" id="flt"></div>
+        <label class="sortl"><span class="lbl">Sort by</span><select id="sort" aria-label="Sort reports">
+          <option value="edited">Last edited</option><option value="overdue">Overdue first</option><option value="open">Longest open</option><option value="no">8D number</option></select></label>
       </div>
       <div class="tblwrap"><table class="reg"><thead><tr><th>8D no.</th><th>Problem</th><th>Current step</th><th>Opened</th><th>Actions</th><th>Last edited</th></tr></thead><tbody id="l-rows"></tbody></table></div>
       <div id="l-empty" class="empty" hidden></div>
@@ -349,6 +360,8 @@ const D=[
  {id:'D8',th:'Recognize & close',q:'Has the customer accepted the closure? Recognize the team and share the lessons.',target:60,
   fields:[['close','Closure and customer acceptance','Closure date, customer sign-off'],['learn','Team recognition and lessons learned','What went well, what we would do differently']]}
 ];
+/* one-word names for the phone roadmap chips */
+const SHORT={D0:'Prepare',D1:'Team',D2:'Problem',D3:'Contain',D4:'Cause',D5:'Fix',D6:'Validate',D7:'Prevent',D8:'Close'};
 const CHK=['PFMEA / DFMEA updated','Control plan updated','Work instructions and SOPs updated','Operators trained on the change','Similar products and processes reviewed (read-across)','Lessons learned recorded'];
 const ROLES=['Champion','Team leader','Member','Customer contact','Supplier contact'];
 const TYPES=['Containment','Corrective: occurrence','Corrective: escape','Preventive (systemic)'];
@@ -477,13 +490,24 @@ async function fillNames(){if(!user)return;const els=[...document.querySelectorA
 /* ---------- register view ---------- */
 function rList(){
   const all=Object.entries(reports).map(([id,r])=>({id,r,f:facts(r)}));
-  const nOpen=all.filter(x=>x.f.cur).length,nLate=all.filter(x=>(x.f.cur&&x.f.lateT)||x.f.ov).length;
-  $('l-kpis').innerHTML=[['Total',all.length,'reports'],['Open',nOpen,'not yet closed'],['Late',nLate,'past target or overdue actions',nLate?'t-bad':''],['Closed',all.length-nOpen,'D0 to D8 complete']]
+  /* "Late" used to mix two different things. Past target = a D3, D5 or D8 deadline missed; overdue = actions past their due date. */
+  const inOpen=x=>!!x.f.cur,inTarget=x=>!!x.f.cur&&x.f.lateT,inOverdue=x=>x.f.ov>0;
+  const nOpen=all.filter(inOpen).length,nTarget=all.filter(inTarget).length,repsOv=all.filter(inOverdue),nOvAct=repsOv.reduce((n,x)=>n+x.f.ov,0);
+  $('l-kpis').innerHTML=[['Open',nOpen,'not yet closed'],['Closed',all.length-nOpen,'D0 to D8 complete'],
+    ['Past target',nTarget,'missed a D3, D5 or D8 deadline',nTarget?'t-bad':''],['Overdue actions',nOvAct,nOvAct?`in ${plural(repsOv.length,'report')}`:'none overdue',nOvAct?'t-bad':'']]
     .map(([l,v,s,c])=>`<div class="kpi"><span class="lbl">${l}</span><b class="mono ${c||''}">${loaded?v:'–'}</b><span class="sub muted">${s}</span></div>`).join('');
-  const q=$('q').value.trim().toLowerCase();
-  const rows=all.filter(x=>flt==='all'||(flt==='open'&&x.f.cur)||(flt==='closed'&&!x.f.cur)||(flt==='late'&&((x.f.cur&&x.f.lateT)||x.f.ov)))
+  /* filter buttons are built once and updated in place, so keyboard focus stays on the one just pressed */
+  const FIL=[['all','All',all.length],['open','Open',nOpen],['target','Past target',nTarget],['overdue','Overdue',repsOv.length],['closed','Closed',all.length-nOpen]],fl=$('flt');
+  if(!fl.children.length)fl.innerHTML=FIL.map(([k,l])=>`<button data-flt="${k}"><span>${l}</span> <span class="cnt"></span></button>`).join('');
+  FIL.forEach(([k,,n],i)=>{const b=fl.children[i];b.setAttribute('aria-pressed',flt===k);b.querySelector('.cnt').textContent=loaded?n:''});
+  const q=$('q').value.trim().toLowerCase(),by=$('sort').value;
+  const cmp={edited:(a,b)=>(b.r.updatedAt||'').localeCompare(a.r.updatedAt||''),
+    overdue:(a,b)=>(b.f.ov-a.f.ov)||((+inTarget(b))-(+inTarget(a)))||(b.r.updatedAt||'').localeCompare(a.r.updatedAt||''),
+    open:(a,b)=>((+inOpen(b))-(+inOpen(a)))||((b.f.days||0)-(a.f.days||0)),
+    no:(a,b)=>(a.r.meta.no||'').localeCompare(b.r.meta.no||'',undefined,{numeric:true})}[by]||((a,b)=>0);
+  const rows=all.filter(x=>flt==='all'||(flt==='open'&&inOpen(x))||(flt==='closed'&&!inOpen(x))||(flt==='target'&&inTarget(x))||(flt==='overdue'&&inOverdue(x)))
     .filter(x=>!q||[x.r.meta.no,x.r.meta.title,x.r.meta.customer,x.r.meta.part].join(' ').toLowerCase().includes(q))
-    .sort((a,b)=>(b.r.updatedAt||'').localeCompare(a.r.updatedAt||''));
+    .sort(cmp);
   $('l-rows').innerHTML=rows.map(({id,r,f})=>`<tr>
     <td class="mono" data-label="8D no.">${esc(r.meta.no)||'–'}</td>
     <td><a class="ttl" href="#r-${esc(id)}">${esc(r.meta.title)||'(Untitled)'}</a><span class="subl">${esc([r.meta.customer,r.meta.part].filter(Boolean).join(' · '))}</span></td>
@@ -535,7 +559,7 @@ function rLight(){const f=facts(S),o=pd(S.meta.opened);
     const ovr=x.status==='done'&&x.override;
     if(ovr)ft+=`<span class="t-warn"> · Exception: ${plural(x.override.issues.length||1,'open issue')}</span>`;
     const stateTxt=ovr?'complete, with an exception':ST[x.status].toLowerCase();
-    return`<button class="step ${x.status}${ovr?' ovr':''}${i===sel?' sel':''}" data-step="${i}" aria-pressed="${i===sel}" aria-label="${c.id} ${esc(c.th)}, ${stateTxt}"><span class="hd"><span class="id">${c.id}</span><span class="dot" aria-hidden="true" title="${ovr?'Completed with an exception':ST[x.status]}">${x.status==='done'?(ovr?'!':'✓'):''}</span></span><span class="nm">${esc(c.th)}</span><span class="key">${esc(x.key)||'<i>No key point yet</i>'}</span><span class="ft">${ft}</span></button>`}).join('');
+    return`<button class="step ${x.status}${ovr?' ovr':''}${i===sel?' sel':''}" data-step="${i}" aria-pressed="${i===sel}" aria-label="${c.id} ${esc(c.th)}, ${stateTxt}"><span class="hd"><span class="id">${c.id}</span><span class="dot" aria-hidden="true" title="${ovr?'Completed with an exception':ST[x.status]}">${x.status==='done'?(ovr?'!':'✓'):''}</span></span><span class="nm">${esc(c.th)}</span><span class="snm" aria-hidden="true">${SHORT[c.id]}</span><span class="key">${esc(x.key)||'<i>No key point yet</i>'}</span><span class="ft">${ft}</span></button>`}).join('');
   rChecks()}
 
 const CLAB={bad:'Fix',warn:'Check',info:'Tip',ovr:'Exception'};
@@ -628,9 +652,9 @@ function dActs(g){const rows=S.actions.map((a,i)=>[a,i]).filter(([a])=>g.types.i
      return`<li class="dact" id="drow-${i}"><span class="n mono">${esc(a.id)}</span>
        <textarea class="grow" id="${dfid(p+'.text')}" data-b="${p}.text" rows="1" placeholder="What needs to be done" aria-label="Action ${esc(a.id)}">${esc(a.text)}</textarea>
        <select id="${dfid(p+'.status')}" data-b="${p}.status" data-r="1" aria-label="Status of action ${esc(a.id)}">${ASTAT.map(([v,t])=>`<option value="${v}"${a.status===v?' selected':''}>${t}</option>`).join('')}</select>
-       <div class="dmeta"><select id="${dfid(p+'.type')}" data-b="${p}.type" data-r="1" aria-label="Type of action ${esc(a.id)}">${TYPES.map(t=>`<option value="${esc(t)}"${a.type===t?' selected':''}>${esc(t)}</option>`).join('')}</select>
-         <input type="text" id="${dfid(p+'.owner')}" data-b="${p}.owner" value="${esc(a.owner)}" placeholder="Owner" aria-label="Owner of action ${esc(a.id)}">
-         <span class="dcell"><input type="date" id="${dfid(p+'.due')}" data-b="${p}.due" data-r="1" value="${esc(a.due)}" aria-label="Due date of action ${esc(a.id)}">${overdue(a)&&!blankA(a)?'<span class="pill bad">Overdue</span>':''}</span>
+       <div class="dmeta"><div class="fcell"><label class="lbl" for="${dfid(p+'.type')}">Type</label><select id="${dfid(p+'.type')}" data-b="${p}.type" data-r="1" aria-label="Type of action ${esc(a.id)}">${TYPES.map(t=>`<option value="${esc(t)}"${a.type===t?' selected':''}>${esc(t)}</option>`).join('')}</select></div>
+         <div class="fcell"><label class="lbl" for="${dfid(p+'.owner')}">Owner</label><input type="text" id="${dfid(p+'.owner')}" data-b="${p}.owner" value="${esc(a.owner)}" placeholder="Name" aria-label="Owner of action ${esc(a.id)}"></div>
+         <div class="fcell"><label class="lbl" for="${dfid(p+'.due')}">Due</label><span class="dcell"><input type="date" id="${dfid(p+'.due')}" data-b="${p}.due" data-r="1" value="${esc(a.due)}" aria-label="Due date of action ${esc(a.id)}">${overdue(a)&&!blankA(a)?'<span class="pill bad">Overdue</span>':''}</span></div>
          <button class="x" data-delact="${i}" aria-label="Remove action ${esc(a.id)}">✕</button></div></li>`}).join('')}</ul>`
    :`<p class="note" style="margin:0">No ${g.noun}s yet.</p>`)+
    `<div><button class="btn" data-addtype="${esc(g.add)}">+ Add ${g.noun}</button></div></div>`}
@@ -795,7 +819,7 @@ function incoming(){if(!openId)return rList();const r=reports[openId];
   if(JSON.stringify(n)!==JSON.stringify(old)){S=n;rReport()}}
 
 /* ---------- events ---------- */
-document.addEventListener('input',e=>{const t=e.target;if(t.id==='q'){rList();return}
+document.addEventListener('input',e=>{const t=e.target;if(t.id==='q'||t.id==='sort'){rList();return}
   const b=t.dataset&&t.dataset.b;if(!b||!S||RO)return;
   const v=t.type==='checkbox'?t.checked:t.type==='number'?(t.value===''?'':Math.max(0,Number(t.value)||0)):t.value;
   const isStat=b.startsWith('actions.')&&b.endsWith('.status');
