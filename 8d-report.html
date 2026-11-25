@@ -45,6 +45,9 @@ button:disabled{cursor:not-allowed;opacity:.55}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .btn.primary:hover:not(:disabled){color:var(--on-accent);filter:brightness(1.08)}
 .btn.danger{border-color:var(--bad);color:var(--bad)}
+.btn.quiet-danger{margin-left:12px;color:var(--bad);border-color:transparent;background:none}
+.btn.quiet-danger:hover:not(:disabled){border-color:var(--bad);color:var(--bad)}
+.tools span:empty{display:none}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px}
@@ -113,7 +116,7 @@ td.n{font-family:var(--mono);color:var(--muted);padding-top:11px;width:3.6em;whi
 .chk{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 16px;margin:0;padding:0;list-style:none}
 .chk label{display:flex;gap:8px;align-items:flex-start}
 .chk input{margin-top:5px;accent-color:var(--accent)}
-.pill{display:inline-block;font-size:.72rem;font-weight:600;border-radius:999px;padding:1px 8px;white-space:nowrap}
+.pill{display:inline-block;font-size:.72rem;font-weight:600;border-radius:999px;padding:2px 8px;white-space:nowrap}
 .pill.bad{background:var(--bad-soft);color:var(--bad)} .pill.ok{background:var(--ok-soft);color:var(--ok)}
 .pill.warn{background:var(--warn-soft);color:var(--warn)} .pill.info{background:var(--accent-soft);color:var(--accent)}
 .checks{display:flex;flex-direction:column;gap:10px}
@@ -149,8 +152,8 @@ td.n{font-family:var(--mono);color:var(--muted);padding-top:11px;width:3.6em;whi
 /* actions inside a discipline */
 .dacts{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
 .dact{display:grid;grid-template-columns:auto minmax(0,1fr) 9.5rem;gap:6px 10px;padding:10px 0;border-bottom:1px solid var(--line);align-items:start}
-.dact .n{grid-row:1/3;padding-top:8px;color:var(--muted);font-size:.85rem}
-.dact>select{grid-column:3;grid-row:1}
+.dact .n{grid-row:1/3;padding-top:26px;color:var(--muted);font-size:.85rem}
+.dact>.st{grid-column:3;grid-row:1}
 .dmeta{grid-column:2/-1;display:grid;grid-template-columns:minmax(0,1.8fr) minmax(0,1fr) minmax(0,1.2fr) auto;gap:8px;align-items:start}
 .dmeta .x{margin-top:16px}
 .fcell{display:flex;flex-direction:column;gap:2px;min-width:0}
@@ -178,6 +181,8 @@ textarea.grow{min-height:38px;resize:none;field-sizing:content;max-height:14em;o
 .sortl select{width:auto}
 .seg .cnt{font-family:var(--mono);font-size:.78rem;opacity:.85}
 .seg{flex-wrap:wrap}
+/* phone: the register filters wrap, so each becomes its own chip instead of a broken segmented bar */
+@media (max-width:560px){#flt{border:0;gap:6px;overflow:visible}#flt button{border:1px solid var(--line);border-radius:6px}#flt button[aria-pressed=true]{border-color:var(--accent)}}
 .reg th{padding:8px 10px;border-bottom:1px solid var(--line)}
 .reg td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
 .reg tr:last-child td{border-bottom:0}
@@ -225,8 +230,8 @@ textarea.grow{min-height:38px;resize:none;field-sizing:content;max-height:14em;o
   .grid2,.chk,.meta{grid-template-columns:minmax(0,1fr)}
   #r-title{font-size:1.3rem}
   .dact{grid-template-columns:auto minmax(0,1fr)}
-  .dact .n{grid-row:auto}
-  .dact>select{grid-column:2;grid-row:auto}
+  .dact .n{grid-row:auto;padding-top:0}
+  .dact>.st{grid-column:2;grid-row:auto}
   .dmeta{grid-column:2;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
   .dmeta .fcell:first-child{grid-column:1/-1}
   .dmeta .x{grid-column:1/-1;justify-self:end;margin-top:0}}
@@ -259,7 +264,7 @@ textarea.grow{min-height:38px;resize:none;field-sizing:content;max-height:14em;o
 /* touch: 44px targets */
 @media (pointer:coarse),(max-width:560px){
   .x,.btn,.seg button{min-height:44px}.x{min-width:44px}
-  .dmeta select,.dmeta input,.dact>select,.dact textarea,.gate input,.sortl select,.filters input{min-height:44px}
+  .dmeta select,.dmeta input,.dact .st select,.dact textarea,.gate input,.sortl select,.filters input{min-height:44px}
   .issuelink{min-height:44px;display:inline-flex;align-items:center}
   .chk label{min-height:44px;align-items:center}.chk input{width:20px;height:20px;margin-top:0}}
 @media (prefers-reduced-motion:no-preference){.step,.btn{transition:border-color .15s,box-shadow .15s}}
@@ -306,10 +311,10 @@ textarea.grow{min-height:38px;resize:none;field-sizing:content;max-height:14em;o
       <div class="tools">
         <span class="note" id="r-save"></span>
         <span class="note" id="r-xmsg" role="status"></span>
-        <button class="btn" id="b-del">Delete</button>
         <button class="btn" id="b-sum">Text summary</button>
         <button class="btn" id="b-xlsx" hidden>Export Excel</button>
         <button class="btn primary" id="b-pdf" hidden>Export PDF</button>
+        <button class="btn quiet-danger" id="b-del">Delete report</button>
       </div>
     </div>
     <div class="banner" id="r-note" hidden></div>
@@ -419,7 +424,7 @@ function example(){const s=blank();
   set('D4','done',dd(7),'Crimp height 0.08 mm over nominal after the applicator change; no check after tool change.',{occ:'Crimp height on CR-07 is 0.08 mm above nominal after the applicator change, because the tool-change procedure does not require re-setting and measuring.',esc:'Control plan measures crimp height only at shift start. No measurement after a tool change and no in-process pull test.',ver:'Setting crimp height 0.08 mm high again gives a mean pull force of 38 N; back at nominal it gives 85 N (spec ≥ 60 N). Repeated 3 times with the same result.'});
   set('D5','done',dd(9),'Crimp height and pull test after every tool change. Crimp force monitor to be installed.',{occ:'Applicator change procedure revised: set up and measure crimp height on the first 5 parts before release.',esc:'Pull test of 5 parts after each tool change and every 2 hours. Crimp force monitor on CR-07.',ver:'Trial run of 2,000 parts: zero defects, minimum pull force 79 N, no change in cycle time.'});
   set('D6','doing','','New procedure and pull test live. Waiting for crimp force monitor installation.',{impl:'New tool-change procedure and pull test in use. Crimp force monitor waiting for the supplier to install.',val:'48,000 parts produced since the fix with zero defects. 100% pull test stays in place until the monitor is installed.'});
-  set('D7','todo','','Roll out the tool-change procedure to all 9 crimp presses.',{sys:'Roll out the tool-change procedure and pull test to all 9 crimp presses. Add it to the control plan template for crimping.'});
+  set('D7','doing','','Roll out the tool-change procedure to all 9 crimp presses.',{sys:'Roll out the tool-change procedure and pull test to all 9 crimp presses. Add it to the control plan template for crimping.'});
   s.chk=[true,true,false,false,false,false];
   s.actions=[
    {id:'A-01',type:TYPES[0],text:'100% pull test of all stock',owner:'QA',due:dd(1),status:'done'},
@@ -500,7 +505,7 @@ function rList(){
     ['Past target',nTarget,'missed a D3, D5 or D8 deadline',nTarget?'t-bad':''],['Overdue actions',nOvAct,nOvAct?`in ${plural(repsOv.length,'report')}`:'none overdue',nOvAct?'t-bad':'']]
     .map(([l,v,s,c])=>`<div class="kpi"><span class="lbl">${l}</span><b class="mono ${c||''}">${loaded?v:'–'}</b><span class="sub muted">${s}</span></div>`).join('');
   /* filter buttons are built once and updated in place, so keyboard focus stays on the one just pressed */
-  const FIL=[['all','All',all.length],['open','Open',nOpen],['target','Past target',nTarget],['overdue','Overdue',repsOv.length],['closed','Closed',all.length-nOpen]],fl=$('flt');
+  const FIL=[['all','All',all.length],['open','Open',nOpen],['target','Past target',nTarget],['overdue','Overdue actions',repsOv.length],['closed','Closed',all.length-nOpen]],fl=$('flt');
   if(!fl.children.length)fl.innerHTML=FIL.map(([k,l])=>`<button data-flt="${k}"><span>${l}</span> <span class="cnt"></span></button>`).join('');
   FIL.forEach(([k,,n],i)=>{const b=fl.children[i];b.setAttribute('aria-pressed',flt===k);b.querySelector('.cnt').textContent=loaded?n:''});
   const q=$('q').value.trim().toLowerCase(),by=$('sort').value;
@@ -515,7 +520,7 @@ function rList(){
     <td class="mono" data-label="8D no.">${esc(r.meta.no)||'–'}</td>
     <td><a class="ttl" href="#r-${esc(id)}">${esc(r.meta.title)||'(Untitled)'}</a><span class="subl">${esc([r.meta.customer,r.meta.part].filter(Boolean).join(' · '))}</span></td>
     <td data-label="Current step">${f.cur?`<span class="pill info">${f.cur.id} ${esc(f.cur.th)}</span>`:f.openA?`<span class="pill warn">Closed, ${plural(f.openA,'action')} open</span>`:'<span class="pill ok">Closed</span>'}${f.lateT?' <span class="pill bad">Past target</span>':''}
-      <div class="prog" title="${f.nd} of 9 complete">${D.map(c=>`<i class="${r.d[c.id].status}"></i>`).join('')}</div></td>
+      <div class="prog" role="img" aria-label="${f.nd} of 9 disciplines complete" title="${f.nd} of 9 complete">${D.map(c=>`<i class="${r.d[c.id].status}"></i>`).join('')}</div></td>
     <td data-label="Opened"><span class="mono">${esc(fmt(r.meta.opened))||'–'}</span><span class="subl">${f.days==null?'':plural(f.days,'day')}</span></td>
     <td data-label="Actions"><span><span class="mono">${f.dn}/${f.live}</span>${f.ov?` <span class="pill bad">${f.ov} overdue</span>`:''}</span></td>
     <td data-label="Last edited"><span>${uid(r.updatedBy||r.createdBy)}</span><span class="subl">${esc(rel(r.updatedAt||r.createdAt))}</span></td></tr>`).join('');
@@ -618,6 +623,8 @@ function checksFor(S){const w=[],d=S.d,add=(lv,id,t,go,nogate,short,reopen)=>w.p
   const nc=S.chk.filter(Boolean).length;
   if((d.D7.status==='done'||d.D8.status!=='todo')&&nc<6)add('bad','D7',`Prevent-recurrence checklist is ${nc}/6. Do not close before it is complete.`,'',false,`The prevent-recurrence checklist is ${nc}/6.`);
   D.forEach(c=>{const t=tgt(S,c);if(t&&t.late)add('bad',c.id,S.d[c.id].status==='done'?`Completed later than the day ${t.days} target.`:`Past the day ${t.days} target.`,'',true)});
+  S.actions.forEach((a,i)=>{if(!isOpen(a)||blankA(a))return;const miss=[!a.owner.trim()&&'owner',!a.due&&'due date'].filter(Boolean);
+    if(miss.length)add('info','Action',`${a.id} has no ${miss.join(' or ')}.`,'a'+i,true)});
   S.actions.forEach((a,i)=>{if(overdue(a)&&!blankA(a)&&!flagged.has(i))add('bad','Action',`${a.id} is overdue since ${fmt(a.due)}.`,'a'+i,false,`${actName(a)} is overdue since ${fmt(a.due)}.`)});
   /* a step completed with an exception has one row of its own. The issues it accepted fold into that row; anything new still shows. */
   D.forEach(c=>{const x=d[c.id];if(!(x.status==='done'&&x.override))return;
@@ -642,17 +649,18 @@ function rDetail(){const c=D[sel],p='d.'+c.id,x=S.d[c.id];
    (gate&&gate.step===c.id?`<div class="gate" role="group" aria-labelledby="gate-h"><p id="gate-h" tabindex="-1">Open before ${c.id} can close</p>
      <ul>${gate.items.map(f=>`<li>${findBtn(f,true)}</li>`).join('')}</ul>
      <div class="field"><label class="lbl" for="gate-reason">Reason for completing anyway (required)</label>
-       <input type="text" id="gate-reason" maxlength="200" required aria-describedby="gate-note" placeholder="e.g. Supplier install moved to 15 Dec; customer agreed"></div>
+       <input type="text" id="gate-reason" maxlength="200" required aria-describedby="gate-note" placeholder="e.g. Install moved to 15 Dec; customer agreed"></div>
      <p class="note" id="gate-note" style="margin:0">Completing with an exception saves your name, today's date, this list and your reason on the report. It goes on the PDF the customer sees.</p>
      <div class="tools"><button class="btn primary" data-gate="keep">${x.status==='doing'?'Stay in progress':'Leave as not started'}</button><button class="btn" data-gate="go" disabled>Complete with exception</button></div></div>`:'')+
    (x.status==='done'&&x.override?`<div class="ovrnote"><span><b>Completed with an exception</b> on ${esc(fmt(x.override.at.slice(0,10)))} by ${uid(x.override.by)}. Open at that time:</span>
      <ul>${x.override.issues.map(s=>`<li>${esc(s)}</li>`).join('')}</ul>${x.override.reason?`<span><b>Reason:</b> ${esc(x.override.reason)}</span>`:'<span class="t-warn"><b>No reason recorded.</b></span>'}</div>`:'')+
-   `<p class="q">${esc(c.q)}</p>`+fld(p+'.key','Key point (shown on the roadmap)',tx(p+'.key','The main point of this discipline in one or two lines',2));
+   `<p class="q">${esc(c.q)}</p>`;
   if(c.id==='D1')h+=`<div class="tblwrap"><table class="team"><thead><tr><th>Name</th><th>Role</th><th>Department / function</th><th></th></tr></thead><tbody>${S.team.map((m,i)=>`<tr><td>${inp('team.'+i+'.name','text','Name','aria-label="Name"')}</td><td>${sl('team.'+i+'.role',ROLES,'Role')}</td><td>${inp('team.'+i+'.dept','text','Department, expertise','aria-label="Department"')}</td><td><button class="x" data-delteam="${i}" aria-label="Remove team member">✕</button></td></tr>`).join('')}</tbody></table></div><div><button class="btn" id="b-addteam">+ Add team member</button></div>`;
   const fs=c.fields.map(([k,l,ph,wide])=>`<div class="field"${wide?' style="grid-column:1/-1"':''}><label class="lbl" for="${fid(p+'.f.'+k)}">${esc(l)}</label>${tx(p+'.f.'+k,ph,c.grid&&!wide?2:3)}</div>`).join('');
   h+=c.grid?`<div class="grid2">${fs}</div>`:fs;
   if(c.id==='D7')h+=`<div class="field"><span class="lbl">Prevent recurrence checklist</span><ul class="chk">${CHK.map((t,i)=>`<li><label><input type="checkbox" id="f-chk-${i}" data-b="chk.${i}"${S.chk[i]?' checked':''}><span>${esc(t)}</span></label></li>`).join('')}</ul></div>`;
   if(DACT[c.id])h+=dActs(DACT[c.id]);
+  h+=fld(p+'.key','Roadmap summary',tx(p+'.key','One or two lines for the roadmap card, once the fields above are filled in',2));
   h+=`<div class="row">`+fld(p+'.done','Completed on',inp(p+'.done','date'))+(c.target!=null?fld(p+'.target','Target (days from opening)',inp(p+'.target','number','','min="0"')):'')+`</div>`+
     (x.status!=='done'&&pd(x.prevDone)?`<p class="note" style="margin:0">Previously completed ${esc(fmt(x.prevDone))}. That date comes back if you complete this step again.</p>`:'');
   $('detail').innerHTML=h}
@@ -667,8 +675,8 @@ function dActs(g){const rows=S.actions.map((a,i)=>[a,i]).filter(([a])=>g.types.i
   return`<div class="field"><span class="lbl">${g.label} (${rows.length})</span>`+
    (rows.length?`<ul class="dacts">${rows.map(([a,i])=>{const p='actions.'+i;
      return`<li class="dact" id="drow-${i}"><span class="n mono">${esc(a.id)}</span>
-       <textarea class="grow" id="${dfid(p+'.text')}" data-b="${p}.text" rows="1" placeholder="What needs to be done" aria-label="Action ${esc(a.id)}">${esc(a.text)}</textarea>
-       <select id="${dfid(p+'.status')}" data-b="${p}.status" data-r="1" aria-label="Status of action ${esc(a.id)}">${ASTAT.map(([v,t])=>`<option value="${v}"${a.status===v?' selected':''}>${t}</option>`).join('')}</select>
+       <div class="fcell"><label class="lbl" for="${dfid(p+'.text')}">Action</label><textarea class="grow" id="${dfid(p+'.text')}" data-b="${p}.text" rows="1" placeholder="What needs to be done" aria-label="Action ${esc(a.id)}">${esc(a.text)}</textarea></div>
+       <div class="fcell st"><label class="lbl" for="${dfid(p+'.status')}">Status</label><select id="${dfid(p+'.status')}" data-b="${p}.status" data-r="1" aria-label="Status of action ${esc(a.id)}">${ASTAT.map(([v,t])=>`<option value="${v}"${a.status===v?' selected':''}>${t}</option>`).join('')}</select></div>
        <div class="dmeta"><div class="fcell"><label class="lbl" for="${dfid(p+'.type')}">Type</label><select id="${dfid(p+'.type')}" data-b="${p}.type" data-r="1" aria-label="Type of action ${esc(a.id)}">${TYPES.map(t=>`<option value="${esc(t)}"${a.type===t?' selected':''}>${esc(t)}</option>`).join('')}</select></div>
          <div class="fcell"><label class="lbl" for="${dfid(p+'.owner')}">Owner</label><input type="text" id="${dfid(p+'.owner')}" data-b="${p}.owner" value="${esc(a.owner)}" placeholder="Name" aria-label="Owner of action ${esc(a.id)}"></div>
          <div class="fcell"><label class="lbl" for="${dfid(p+'.due')}">Due</label><span class="dcell"><input type="date" id="${dfid(p+'.due')}" data-b="${p}.due" data-r="1" value="${esc(a.due)}" aria-label="Due date of action ${esc(a.id)}">${overdue(a)&&!blankA(a)?'<span class="pill bad">Overdue</span>':''}</span></div>
@@ -898,10 +906,10 @@ document.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)r
     const n=$(dfid('actions.'+(S.actions.length-1)+'.text'));if(n)n.focus();return}
   if(t.id==='b-meta'){metaOpen=!metaOpen;rHead();if(metaOpen){const n=$(fid('meta.title'));if(n)n.focus()}return}
   if(t.id==='b-undo'){const f=undoFn;hideToast();if(f&&S)f();return}
-  if(t.id==='b-del'){if(ds.arm){clearTimeout(t._tm);delete ds.arm;t.textContent='Delete';t.classList.remove('danger');
+  if(t.id==='b-del'){if(ds.arm){clearTimeout(t._tm);delete ds.arm;t.textContent='Delete report';t.classList.remove('danger');
       const id=openId;pending.clear();clearTimeout(flushT);chain=chain.then(()=>db.collection('reports').doc(id).delete()).then(()=>{},()=>banner('l-note','The report could not be deleted.'));
       S=null;openId=null;delete reports[id];location.hash='list'}
-    else{ds.arm='1';t.textContent='Select again to delete for good';t.classList.add('danger');t._tm=setTimeout(()=>{delete ds.arm;t.textContent='Delete';t.classList.remove('danger')},4000)}return}
+    else{ds.arm='1';t.textContent='Select again to delete for good';t.classList.add('danger');t._tm=setTimeout(()=>{delete ds.arm;t.textContent='Delete report';t.classList.remove('danger')},4000)}return}
   if(t.id==='b-sum'){$('sumtext').value=summary();$('copymsg').textContent='';const b=$('sumbox');b.hidden=false;b.scrollIntoView({block:'nearest'});return}
   if(t.id==='b-sumclose'){$('sumbox').hidden=true;return}
   if(t.id==='b-copy'){const ta=$('sumtext'),m=$('copymsg');
