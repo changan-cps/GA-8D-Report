@@ -110,6 +110,7 @@ td{padding:4px 6px;vertical-align:top}
 td.n{font-family:var(--mono);color:var(--muted);padding-top:11px;width:3.6em;white-space:nowrap;font-size:.85rem}
 .x{border:0;background:none;color:var(--muted);padding:6px 8px;border-radius:6px}
 .x:hover:not(:disabled){color:var(--bad);background:var(--bad-soft)}
+.x.armed{color:var(--bad);background:var(--bad-soft);font-size:.8rem;font-weight:600;padding:6px 10px;white-space:nowrap}
 .acts td{padding:8px 6px;border-top:1px solid var(--line);vertical-align:top}
 .acts td:nth-child(2){min-width:150px}.acts td:nth-child(3){min-width:240px}.acts td:nth-child(4){min-width:100px}
 .acts td:nth-child(5){min-width:130px}.acts td:nth-child(6){min-width:96px}
@@ -458,7 +459,8 @@ function norm(raw){const b=blank(),r=(raw&&typeof raw==='object')?clone(raw):{};
     o.status=ST[x.status]?x.status:'todo';o.key=str(x.key);o.done=str(x.done);o.prevDone=str(x.prevDone);
     /* a step completed past open issues carries its own record: when, by whom, and what was open */
     const ov=x.override&&typeof x.override==='object'?x.override:null;
-    o.override=ov&&str(ov.at)?{at:str(ov.at),by:str(ov.by),reason:str(ov.reason).slice(0,200),issues:(Array.isArray(ov.issues)?ov.issues:[]).filter(s=>typeof s==='string').slice(0,8).map(s=>s.slice(0,300))}:null;
+    o.override=ov&&str(ov.at)?{at:str(ov.at),by:str(ov.by),reason:str(ov.reason).slice(0,500),issues:(Array.isArray(ov.issues)?ov.issues:[]).filter(s=>typeof s==='string').slice(0,20).map(s=>s.slice(0,300)),
+      ids:(Array.isArray(ov.ids)?ov.ids:[]).filter(v=>typeof v==='string'&&ACT_ID.test(v)).slice(0,20)}:null;
     if(c.target!=null)o.target=(typeof x.target==='number'&&x.target>=0)?x.target:(x.target===''?'':c.target);
     c.fields.forEach(([k])=>{o.f[k]=str(x.f&&x.f[k])})});
   b.team=Array.isArray(r.team)?r.team.filter(t=>t&&typeof t==='object').map(t=>({name:str(t.name),role:ROLES.includes(t.role)?t.role:'Member',dept:str(t.dept)})):[];
@@ -467,7 +469,8 @@ function norm(raw){const b=blank(),r=(raw&&typeof raw==='object')?clone(raw):{};
   /* every action keeps one id for life. Older actions, and any duplicate from two people adding at once, are numbered from the high-water mark so a deleted id is never reused */
   let seq=Math.max(Number.isFinite(r.actSeq)?Math.floor(r.actSeq):0,...b.actions.map(a=>a.id?+a.id.slice(2):0));const seen=new Set();b._ids=false;
   b.actions.forEach(a=>{if(!a.id||seen.has(a.id)){a.id=actId(++seq);b._ids=true}seen.add(a.id)});b.actSeq=seq;
-  b.log=Array.isArray(r.log)?r.log.filter(l=>l&&typeof l==='object').slice(-30).map(l=>({t:str(l.t),by:str(l.by),m:str(l.m)})):[];
+  b.log=Array.isArray(r.log)?r.log.filter(l=>l&&typeof l==='object').map(l=>({t:str(l.t),by:str(l.by),m:str(l.m)})):[];
+  b.logTrimmed=Number.isFinite(r.logTrimmed)?r.logTrimmed:0;
   b.createdBy=str(r.createdBy);b.createdAt=str(r.createdAt);b.updatedBy=str(r.updatedBy);b.updatedAt=str(r.updatedAt);return b}
 function example(){const s=blank();
   s.meta={title:'[Example] Terminals pulling out of wire harness during assembly',no:'8D-EX-001',opened:iso(addDays(today(),-43)),customer:'Example customer A',part:'Wire harness WH-4420'};
@@ -544,7 +547,10 @@ addEventListener('online',()=>{if(pending.size){retryN=0;flush()}});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')flush()});
 function saveNote(t){$('r-save').textContent=t}
 function banner(id,t){const b=$(id);b.textContent=t;b.hidden=!t}
-function logEv(m){S.log.push({t:new Date().toISOString(),by:myId||'',m});S.log=S.log.slice(-30);touch('log')}
+/* the history is the audit trail and is kept whole. Only past LOG_MAX entries (the store's size limit) are the oldest dropped, and that count is kept and shown */
+const LOG_MAX=1500;
+function logEv(m){S.log.push({t:new Date().toISOString(),by:myId||'',m});
+  if(S.log.length>LOG_MAX){S.logTrimmed=(S.logTrimmed||0)+S.log.length-LOG_MAX;S.log=S.log.slice(-LOG_MAX);touch('logTrimmed')}touch('log')}
 
 /* ---------- names: store ids only, resolve at render ---------- */
 const uid=id=>id?`<span data-uid="${esc(id)}">Someone</span>`:'<span>Someone</span>';
@@ -653,7 +659,8 @@ function checksFor(S){const w=[],d=S.d,add=(lv,id,t,go,nogate,short,reopen)=>w.p
   if(d.D1.status!=='todo'){
     if(!S.team.some(m=>m.role==='Champion'&&m.name.trim()))add('warn','D1','The team has no Champion.');
     if(!S.team.some(m=>m.role==='Team leader'&&m.name.trim()))add('warn','D1','The team has no Team leader.');}
-  if(d.D2.status!=='todo'&&!/\d/.test(d.D2.f.statement))add('warn','D2','The problem statement has no numbers. Add the quantity or PPM.');
+  if(d.D2.status!=='todo'&&!d.D2.f.statement.trim())add('warn','D2','No problem statement yet.');
+  else if(d.D2.status!=='todo'&&!/\d/.test(d.D2.f.statement))add('warn','D2','The problem statement has no numbers. Add the quantity or PPM.');
   if(d.D2.status!=='todo'&&!/\bnot\b|ไม่พบ|ไม่เกิด/i.test(d.D2.f.where+d.D2.f.when))add('info','D2','Also say where or when the problem does not occur (Is / Is Not).');
   if(/operator error|human error|operator mistake|careless|not careful|พนักงาน(ทำ)?ผิดพลาด|ประมาท/i.test(d.D4.f.occ))add('bad','D4','The root cause blames the operator. Ask why the process allowed the error, and consider poka-yoke.');
   if(d.D4.status!=='todo'&&!d.D4.f.esc.trim())add('bad','D4','No root cause of escape (non-detection) yet.');
@@ -662,6 +669,9 @@ function checksFor(S){const w=[],d=S.d,add=(lv,id,t,go,nogate,short,reopen)=>w.p
   if(d.D5.status==='done'&&!d.D5.f.ver.trim())add('bad','D5','D5 is complete without evidence that the actions work.','',false,'There is no evidence yet that the actions work.');
   /* a step marked complete must hold something: these steps had no content rule, so an empty one used to pass */
   const empty=(id,key)=>!d[id].f[key].trim(),done=id=>d[id].status==='done';
+  if(done('D0')&&empty('D0','era'))add('warn','D0','D0 is complete but no emergency response is recorded.','',false,'No emergency response is recorded.','D0');
+  if(done('D4')&&empty('D4','occ'))add('bad','D4','D4 is complete but there is no root cause of occurrence.','',false,'There is no root cause of occurrence.','D4');
+  if(done('D5')&&empty('D5','occ'))add('warn','D5','D5 is complete but there is no corrective action for the occurrence.','',false,'There is no corrective action for the occurrence.','D5');
   if(done('D0')&&empty('D0','symptom'))add('warn','D0','D0 is complete but the symptom is empty.','',false,'The symptom is not described.','D0');
   if(done('D3')&&empty('D3','ica'))add('warn','D3','D3 is complete but no containment is described.','',false,'No interim containment is described.','D3');
   if(done('D3')&&empty('D3','eff'))add('warn','D3','D3 is complete but there is no evidence the containment works.','',false,'There is no evidence the containment works.','D3');
@@ -685,19 +695,31 @@ function checksFor(S){const w=[],d=S.d,add=(lv,id,t,go,nogate,short,reopen)=>w.p
   S.actions.forEach((a,i)=>{if(overdue(a)&&!blankA(a)&&!flagged.has(i))add('bad','Action',`${a.id} is overdue since ${fmt(a.due)}.`,'a'+i,false,`${actName(a)} is overdue since ${fmt(a.due)}.`)});
   /* a step completed with an exception has one row of its own. The issues it accepted fold into that row; anything new still shows. */
   D.forEach(c=>{const x=d[c.id];if(!(x.status==='done'&&x.override))return;
-    const acc=new Set(x.override.issues);let open=0;
-    for(let k=w.length-1;k>=0;k--){const f=w[k];if(f[1]===c.id&&acc.has((f[5]||f[2]).slice(0,300))){w.splice(k,1);open++}}
+    /* an accepted issue is folded into this row while it is still open; D8 closes the whole report, so its exception can accept issues from any step */
+    const acc=new Set(x.override.issues),ids=x.override.ids||[];let open=0;
+    for(let k=w.length-1;k>=0;k--){const f=w[k];if((f[1]===c.id||c.id==='D8')&&f[0]!=='ovr'&&acc.has((f[5]||f[2]).slice(0,300))){w.splice(k,1);open++}}
     const n=x.override.issues.length||1;
-    /* "accepted" counts the issues that were open when the step was completed; "open" is how many of those still are. They are the same issues, not two sets. */
-    const state=open===0?(n===1?'It has since been resolved':'All have since been resolved'):open===n?(n===1?'It is still open':'All are still open'):`${open} of them are still open`;
-    add('ovr',c.id,`${c.id} was completed with an exception on ${fmt(x.override.at.slice(0,10))}, accepting ${plural(n,'open issue')}. ${state}.`,'',true)});
+    /* say what became of each accepted action, by id. A deleted action is "removed", never "resolved": deleting it is not fixing it */
+    const fate=ids.map(id=>{const a=S.actions.find(q=>q.id===id);
+      if(!a){const l=[...S.log].reverse().find(e=>e.m.startsWith('Action '+id+' ')&&/ removed$/.test(e.m));return`${id} was removed${l?' on '+fmt(l.t.slice(0,10)):''}`}
+      if(isOpen(a))return`${id} is still ${actState(a)}`;return`${id} is ${a.status==='cancel'?'cancelled':'done'}`});
+    const openActs=ids.filter(id=>{const a=S.actions.find(q=>q.id===id);return a&&isOpen(a)}).length,other=n-ids.length,otherOpen=Math.max(0,open-openActs);
+    const rest=other>0?(otherOpen?`${plural(otherOpen,'other accepted issue')} still open.`:(other===1?'The other accepted issue has since been resolved.':'The other accepted issues have since been resolved.')):'';
+    add('ovr',c.id,`${c.id} was completed with an exception on ${fmt(x.override.at.slice(0,10))}, accepting ${plural(n,'open issue')}. ${fate.length?fate.join('; ')+'.':''} ${rest}`.replace(/\s+/g,' ').trim(),'',true)});
   return w}
 /* what completing this discipline would leave unresolved (lateness is a fact, not a reason to stop) */
 function gateFor(id){const t=clone(S);t.d[id].status='done';t.d[id].override=null;if(!t.d[id].done)t.d[id].done=iso(today());
-  return checksFor(t).filter(f=>f[1]===id&&(f[0]==='bad'||f[0]==='warn')&&!f[4])}
+  const blocking=f=>(f[0]==='bad'||f[0]==='warn')&&!f[4];
+  if(id!=='D8')return checksFor(t).filter(f=>f[1]===id&&blocking(f));
+  /* D8 closes the whole 8D: every earlier step that is not complete, and every blocking finding anywhere */
+  const steps=D.filter(c=>c.id!=='D8'&&t.d[c.id].status!=='done').map(c=>['warn',c.id,`${c.id} ${c.th} is not complete.`,'s'+D.indexOf(c),false,`${c.id} ${c.th} is not complete.`,'']);
+  return steps.concat(checksFor(t).filter(blocking))}
 
-function rHist(){const L=S.log.slice().reverse();
-  $('hist').innerHTML=`<h2>History</h2>`+(L.length?`<ul>${L.slice(0,12).map(l=>`<li><span>${esc(l.m)}</span><span class="when">${uid(l.by)} · ${esc(rel(l.t))}</span></li>`).join('')}</ul>`:`<p class="note" style="margin:0">Status changes to disciplines and actions are recorded here with who made them.</p>`);
+let histAll=false;
+function rHist(){const L=S.log.slice().reverse(),shown=histAll?L:L.slice(0,12);
+  $('hist').innerHTML=`<h2>History</h2>`+(L.length?`<ul>${shown.map(l=>`<li><span>${esc(l.m)}</span><span class="when">${uid(l.by)} · ${esc(rel(l.t))}</span></li>`).join('')}</ul>`+
+    (L.length>12?`<div><button class="btn small" data-hist="1">${histAll?'Show latest 12':'Show all '+L.length}</button></div>`:'')+
+    (S.logTrimmed?`<p class="note" style="margin:0">${S.logTrimmed} oldest entries were dropped to stay within the storage limit.</p>`:''):`<p class="note" style="margin:0">Status changes to disciplines and actions are recorded here with who made them.</p>`);
   $('r-who').innerHTML=`Opened by ${uid(S.createdBy)} · last edited by ${uid(S.updatedBy||S.createdBy)} ${esc(rel(S.updatedAt||S.createdAt))}`}
 
 function rDetail(){const c=D[sel],p='d.'+c.id,x=S.d[c.id];
@@ -706,7 +728,7 @@ function rDetail(){const c=D[sel],p='d.'+c.id,x=S.d[c.id];
    (gate&&gate.step===c.id?`<div class="gate" role="group" aria-labelledby="gate-h"><p id="gate-h" tabindex="-1">Open before ${c.id} can close</p>
      <ul>${gate.items.map(f=>`<li>${findBtn(f,true)}</li>`).join('')}</ul>
      <div class="field"><label class="lbl" for="gate-reason">Reason for completing anyway (required)</label>
-       <input type="text" id="gate-reason" maxlength="200" required aria-describedby="gate-note" placeholder="e.g. Install moved to 15 Dec; customer agreed"></div>
+       <input type="text" id="gate-reason" maxlength="500" required aria-describedby="gate-note" placeholder="e.g. Install moved to 15 Dec; customer agreed"></div>
      <p class="note" id="gate-note" style="margin:0">Completing with an exception saves your name, today's date, this list and your reason on the report. It goes on the PDF the customer sees.</p>
      <div class="tools"><button class="btn primary" data-gate="keep">${x.status==='doing'?'Stay in progress':'Leave as not started'}</button><button class="btn" data-gate="go" disabled>Complete with exception</button></div></div>`:'')+
    (x.status==='done'&&x.override?`<div class="ovrnote"><span><b>Completed with an exception</b> on ${esc(fmt(x.override.at.slice(0,10)))} by ${uid(x.override.by)}. Open at that time:</span>
@@ -843,7 +865,7 @@ function pdfBlocks(r,nm){const f=facts(r),m=r.meta,o=pd(m.opened),B=[],e=esc,v=s
   if(!r.actions.length)B.push(`<h2>Actions</h2><p class="k" style="margin:0">No actions yet.</p>`);
   for(let i=0;i<r.actions.length;i+=14)B.push((i?'':`<h2>Actions <small>${f.dn}/${f.live} done${f.ov?' · '+f.ov+' overdue':''}</small></h2>`)+`<table>${AH}${r.actions.slice(i,i+14).map((a,j)=>aRow(a,i+j)).join('')}</table>`);
   const L=r.log.slice().reverse();
-  if(L.length)B.push(`<h2>Change history</h2><table><tr><th style="width:150px">Time</th><th style="width:150px">By</th><th>Change</th></tr>${L.map(l=>{const d=new Date(l.t);return`<tr><td>${e(isNaN(d)?l.t:d.toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'}))}</td><td>${e(nm[l.by]||'')}</td><td>${e(l.m)}</td></tr>`}).join('')}</table>`);
+  if(L.length)B.push(`<h2>Change history <small>${L.length===1?'1 entry':L.length+' entries'}, all of them${r.logTrimmed?`, after ${r.logTrimmed} older entries were dropped to stay within the storage limit`:''}</small></h2><table><tr><th style="width:150px">Time</th><th style="width:150px">By</th><th>Change</th></tr>${L.map(l=>{const d=new Date(l.t);return`<tr><td>${e(isNaN(d)?l.t:d.toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'}))}</td><td>${e(nm[l.by]||'')}</td><td>${e(l.m)}</td></tr>`}).join('')}</table>`);
   B.push(`<h2>Approval</h2><div class="sign"><div>Prepared by<br><span class="k">Date</span></div><div>Team leader<br><span class="k">Date</span></div><div>Champion<br><span class="k">Date</span></div><div>Customer acceptance<br><span class="k">Date</span></div></div>`);
   return B}
 async function pdfReport(r){await Promise.all([lib('h2c'),lib('pdf')]);try{await document.fonts.ready}catch(e){}
@@ -938,6 +960,7 @@ document.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)r
   if(ds.go){goTo(ds.go);return}
   if(ds.jump){const h=$('chk-h');$('checks').scrollIntoView({block:'start',behavior:smooth()});if(h)h.focus({preventScroll:true});return}
   if(ds.open!=null){openAction(+ds.open);return}
+  if(ds.hist){histAll=!histAll;rHist();fillNames();return}
   if(ds.reopen){sel=Math.max(0,D.findIndex(c=>c.id===ds.reopen));gate=null;setStatus(ds.reopen,'doing');return}
   /* the list is read again at the click, so work done since the gate opened counts */
   if(ds.gate){const g=gate,reason=($('gate-reason')||{}).value||'';
@@ -952,7 +975,12 @@ document.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)r
     touch('team');logEv(`Team member "${who}" removed`);rDetail();rLight();rHist();lock();fillNames();
     const j=Math.min(i,S.team.length-1);focusId(j>=0?fid('team.'+j+'.name'):'b-addteam');
     showToast('Team member removed',()=>{const k=Math.min(i,S.team.length);S.team.splice(k,0,m);touch('team');logEv(`Team member "${who}" restored`);rDetail();rLight();rHist();lock();fillNames();focusId(fid('team.'+k+'.name'))});return}
-  if(ds.delact!=null){const i=+ds.delact,a=S.actions.splice(i,1)[0],name=actName(a);
+  if(ds.delact!=null){const i=+ds.delact,cand=S.actions[i];
+    const accepted=cand&&D.some(c=>S.d[c.id].status==='done'&&S.d[c.id].override&&(S.d[c.id].override.ids||[]).includes(cand.id));
+    if(cand&&(accepted||(cand.text.trim()&&cand.owner.trim()))&&!ds.arm){ds.arm='1';t.textContent=accepted?`Remove ${cand.id}? It is in an exception`:`Remove ${cand.id}?`;t.classList.add('armed');
+      t._tm=setTimeout(()=>{delete ds.arm;t.textContent='✕';t.classList.remove('armed')},4000);return}
+    clearTimeout(t._tm);
+    const a=S.actions.splice(i,1)[0],name=actName(a);
     touch('actions');logEv(`Action ${name} removed`);refreshActs();rLight();rHist();fillNames();
     /* focus goes to the next action in this list, or to the add button when it was the last */
     const g=DACT[D[sel].id],mine=S.actions.map((x,k)=>k).filter(k=>g&&g.types.includes(S.actions[k].type)),nx=mine.find(k=>k>=i);
@@ -980,7 +1008,9 @@ function setStatus(id,st,issues,reason){const c=D.find(x=>x.id===id),x=S.d[id];l
   else if(x.status==='done'&&x.done){note=` (was completed ${fmt(x.done)})`;x.prevDone=x.done;x.done=''}
   /* completing past open issues is allowed but never silent: it is stored on the step (when, who, what was open, why), logged, and shown on the card, the check panel and the PDF */
   if(st==='done'&&issues&&issues.length){
-    x.override={at:new Date().toISOString(),by:myId||'',reason:(reason||'').trim().slice(0,200),issues:issues.slice(0,8).map(f=>(f[5]||f[2]).slice(0,300))};
+    /* the actions an exception accepts are kept by id, so the record can later say what became of each one */
+    const ids=[...new Set(issues.map(f=>/^a\d+$/.test(f[3])&&S.actions[+f[3].slice(1)]?S.actions[+f[3].slice(1)].id:'').filter(Boolean))];
+    x.override={at:new Date().toISOString(),by:myId||'',reason:(reason||'').trim().slice(0,500),issues:issues.slice(0,20).map(f=>(f[5]||f[2]).slice(0,300)),ids};
     note=` with ${plural(issues.length,'open issue')} (exception)`}
   else if(x.override)x.override={at:'',by:'',reason:'',issues:[]};
   x.status=st;touch('d.'+id+'.status');touch('d.'+id+'.done');touch('d.'+id+'.prevDone');touch('d.'+id+'.override');
