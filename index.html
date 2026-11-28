@@ -487,7 +487,7 @@ textarea.grow{min-height:38px;resize:none;field-sizing:content;max-height:14em;o
   function emit(){var s=snap();subs.forEach(function(x){try{x.next(s)}catch(e){}})}
   function fail(e){subs.forEach(function(x){try{x.error&&x.error(e)}catch(_){}})}
   function loadAll(){return sb.from('reports').select('id,data').then(function(r){if(r.error)throw mapErr(r.error);
-    var next={};(r.data||[]).forEach(function(row){next[row.id]=row.data});cache=next;loadedOnce=true;emit()})}
+    var next={};(r.data||[]).forEach(function(row){next[row.id]=row.data});cache=next;loadedOnce=true;emit();offerMove()})}
   function loadOne(id){return sb.from('reports').select('id,data').eq('id',id).maybeSingle().then(function(r){
     if(r.error)return;if(r.data)cache[id]=r.data.data;else delete cache[id];emit()})}
   function listen(){if(chan)return;
@@ -563,8 +563,9 @@ textarea.grow{min-height:38px;resize:none;field-sizing:content;max-height:14em;o
         myName=v;names[me.id]=v;then()})}}
   function renderBar(note){if(!bar){bar=document.createElement('div');bar.id='ga8d-bar';document.body.insertBefore(bar,document.body.firstChild)}
     bar.innerHTML='<span><b>Shared 8D reports.</b> Everyone with the team link sees the same reports<span id="ga8d-you"></span>.</span>'+
-      '<span class="acts"><span id="ga8d-msg" role="status"></span><button type="button" class="btn" id="ga8d-name">'+(myName?'Change name':'Add your name (optional)')+'</button></span>';
+      '<span class="acts"><span id="ga8d-msg" role="status"></span><span id="ga8d-move"></span><button type="button" class="btn" id="ga8d-name">'+(myName?'Change name':'Add your name (optional)')+'</button></span>';
     if(myName)bar.querySelector('#ga8d-you').textContent='. You appear as '+myName;bar.querySelector('#ga8d-msg').textContent=note||'';
+    offerMove();
     bar.querySelector('#ga8d-name').onclick=function(){var acts=bar.querySelector('.acts'),f=document.createElement('form');
       f.innerHTML='<input aria-label="Your name" placeholder="Your name" maxlength="80"><button class="btn primary" type="submit">Save</button><button class="btn" type="button">Cancel</button>';
       var i=f.querySelector('input');i.value=myName;f.querySelectorAll('button')[1].onclick=function(){renderBar()};
@@ -572,6 +573,30 @@ textarea.grow{min-height:38px;resize:none;field-sizing:content;max-height:14em;o
         sb.from('profiles').upsert({id:me.id,name:v}).then(function(r){if(r.error){renderBar('Name not saved. Try again.');return}
           myName=v;names[me.id]=v;renderBar('Name saved.');if(typeof window.fillNames==='function')window.fillNames()})};
       acts.replaceWith(f);i.focus();i.select()}}
+  /* ---------- reports saved in this browser by the standalone version: move them to the shared list ---------- */
+  var LOCAL='ga8d:reports',moving=false;
+  function localReports(){try{var o=JSON.parse(localStorage.getItem(LOCAL)||'{}');return o&&typeof o==='object'?o:{}}catch(e){return{}}}
+  function waitingLocal(){var o=localReports();return Object.keys(o).filter(function(id){return /^[a-z0-9]{6,40}$/.test(id)&&o[id]&&typeof o[id]==='object'&&!(id in cache)})}
+  function offerMove(){var el=bar&&bar.querySelector('#ga8d-move');if(!el||!loadedOnce||moving)return;var n=waitingLocal().length;
+    if(!n){el.innerHTML='';return}
+    el.innerHTML='<button type="button" class="btn primary">Move '+n+' report'+(n===1?'':'s')+' saved in this browser to the shared list</button>';
+    el.firstChild.onclick=moveLocal}
+  /* attachments the standalone version kept in this browser's IndexedDB */
+  function localFile(id){return new Promise(function(ok){if(!window.indexedDB)return ok(null);var q=indexedDB.open('ga8d-files',1);
+    q.onupgradeneeded=function(){q.result.createObjectStore('f')};q.onerror=function(){ok(null)};
+    q.onsuccess=function(){try{var t=q.result.transaction('f','readonly').objectStore('f').get(id);t.onsuccess=function(){ok(t.result||null)};t.onerror=function(){ok(null)}}catch(e){ok(null)}}})}
+  function moveLocal(){if(moving)return;moving=true;var o=localReports(),ids=waitingLocal(),done=0,failed=0,files=0,msg=bar.querySelector('#ga8d-msg'),el=bar.querySelector('#ga8d-move');
+    el.innerHTML='';var now=new Date().toISOString();
+    ids.reduce(function(p,id,i){return p.then(function(){msg.textContent='Moving report '+(i+1)+' of '+ids.length+'…';var r=clone(o[id]),fids=[];
+      Object.keys(r.d||{}).forEach(function(k){((r.d[k]&&r.d[k].files)||[]).forEach(function(f){if(f&&f.id)fids.push(f)})});
+      return fids.reduce(function(q,f){return q.then(function(){return localFile(f.id).then(function(b){if(!b)return;
+          return sb.storage.from('attachments').upload(f.id,b,{contentType:b.type||'text/plain',upsert:true}).then(function(x){if(!x.error)files++})})})},Promise.resolve())
+        .then(function(){r.log=(Array.isArray(r.log)?r.log:[]).concat([{t:now,by:me.id,m:'Moved from a browser’s own storage to the shared list'}]);
+          return db.collection('reports').doc(id).set(r)}).then(function(){done++},function(){failed++})})},Promise.resolve())
+    .then(function(){moving=false;
+      if(!failed){try{localStorage.setItem(LOCAL+':moved',localStorage.getItem(LOCAL)||'{}');localStorage.removeItem(LOCAL)}catch(e){}}
+      msg.textContent=done+' report'+(done===1?'':'s')+' moved'+(files?' with '+files+' attachment'+(files===1?'':'s'):'')+'.'+(failed?' '+failed+' could not be moved; select Move again to retry.':'');
+      offerMove()})}
   function open(){hideGate();renderBar();if(!started){started=true;readyRes()}else loadAll().catch(function(){})}
   /* in: load this person's name, ask for it the first time */
   function enter(u){me=u;sb.from('profiles').select('name').eq('id',u.id).maybeSingle().then(function(r){
