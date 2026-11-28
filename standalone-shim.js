@@ -27,7 +27,18 @@
   var downloads={save:function(req){return new Promise(function(ok,no){try{
     var d=req.data,blob=d instanceof Blob?d:new Blob([d]),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=req.filename;document.body.appendChild(a);a.click();
     setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},1000);ok({status:'saved'})}catch(e){var er=new Error('download failed');er.code='unavailable';no(er)}})}};
-  window.claude={use:function(n){return Promise.resolve(n==='db'?db:n==='user'?user:n==='downloads'?downloads:null)}};
+  /* attached files: kept in this browser's IndexedDB (localStorage is too small for them) */
+  var idb=null;
+  function fstore(){return idb||(idb=new Promise(function(ok,no){var q=indexedDB.open('ga8d-files',1);
+    q.onupgradeneeded=function(){q.result.createObjectStore('f')};q.onsuccess=function(){ok(q.result)};q.onerror=function(){idb=null;no(q.error)}}))}
+  function ftx(mode,fn){return fstore().then(function(d){return new Promise(function(ok,no){var t=d.transaction('f',mode),r=fn(t.objectStore('f'));
+    t.oncomplete=function(){ok(r&&r.result)};t.onerror=t.onabort=function(){var e=new Error('store');e.code=(t.error&&t.error.name==='QuotaExceededError')?'quota_or_state':'store_unavailable';no(e)}})})}
+  function hex32(){var a=new Uint8Array(16);crypto.getRandomValues(a);return Array.prototype.map.call(a,function(x){return('0'+x.toString(16)).slice(-2)}).join('')}
+  var assets={
+    upload:function(blob,o){var id=hex32();return ftx('readwrite',function(s){return s.put(blob,id)}).then(function(){return{id:id,url:'',sizeBytes:blob.size,contentType:(o&&o.type)||blob.type}})},
+    delete:function(id){return ftx('readwrite',function(s){return s.delete(id)})},
+    blobOf:function(id){return ftx('readonly',function(s){return s.get(id)}).then(function(b){if(!b){var e=new Error('missing');e.code='not_found';throw e}return b})}};
+  window.claude={use:function(n){return Promise.resolve(n==='db'?db:n==='user'?user:n==='downloads'?downloads:n==='assets'&&window.indexedDB?assets:null)}};
 
   /* a bar that says where the data lives, with export and import of all reports as one JSON file */
   document.addEventListener('DOMContentLoaded',function(){
@@ -45,7 +56,7 @@
     if(emp){fixEmpty();new MutationObserver(fixEmpty).observe(emp,{childList:true,subtree:true})}
     var msg=bar.querySelector('#localmsg');
     bar.querySelector('#lb-exp').onclick=function(){var n=Object.keys(load()).length;if(!n){msg.textContent='Nothing to export yet.';return}
-      downloads.save({filename:'8d-reports-'+new Date().toISOString().slice(0,10)+'.json',data:JSON.stringify({app:'ga-8d',version:1,reports:load()},null,1)}).then(function(){msg.textContent='Exported '+n+' report'+(n===1?'':'s')+'.'})};
+      downloads.save({filename:'8d-reports-'+new Date().toISOString().slice(0,10)+'.json',data:JSON.stringify({app:'ga-8d',version:1,reports:load()},null,1)}).then(function(){msg.textContent='Exported '+n+' report'+(n===1?'':'s')+'. Attached files stay in this browser and are not in the export.'})};
     bar.querySelector('#lb-imp').onchange=function(e){var f=e.target.files[0];e.target.value='';if(!f)return;
       var r=new FileReader();r.onload=function(){try{var j=JSON.parse(r.result);if(!j||j.app!=='ga-8d'||!isObj(j.reports))throw 0;
         var all=load(),n=0;Object.keys(j.reports).forEach(function(id){if(isObj(j.reports[id])){all[id]=j.reports[id];n++}});save(all);notify();msg.textContent='Imported '+n+' report'+(n===1?'':'s')+'. Reports with the same id were replaced.'}catch(x){msg.textContent='That file is not an 8D export.'}};r.readAsText(f)};
