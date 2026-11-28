@@ -95,6 +95,13 @@ create policy "ga8d profiles read"   on public.profiles for select to authentica
 create policy "ga8d profiles insert" on public.profiles for insert to authenticated with check (id = auth.uid() and public.ga8d_member());
 create policy "ga8d profiles update" on public.profiles for update to authenticated using (id = auth.uid()) with check (id = auth.uid());
 
+-- 5b. Let signed-in browsers reach these tables at all (newer Supabase projects no longer grant this
+--     automatically). What each one may actually see or change is still decided by the policies above.
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on public.reports  to authenticated;
+grant select, insert, update         on public.profiles to authenticated;
+revoke all on public.ga8d_settings, public.ga8d_members from anon, authenticated;
+
 -- 6. Live updates: everyone with the page open sees changes as they are saved.
 do $$
 begin
