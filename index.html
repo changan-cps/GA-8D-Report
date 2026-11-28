@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style><script src="config.js"></script></head><body>
-<title>8D Report Demo</title>
+<title>8D Report Online Sheet-Assembly Workshop</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
@@ -553,7 +553,7 @@ textarea.grow{min-height:38px;resize:none;field-sizing:content;max-height:14em;o
   function mountStyle(){var s=document.createElement('style');s.textContent=CSS;document.head.appendChild(s)}
   function card(html){if(!gate){gate=document.createElement('div');gate.id='ga8d-gate';document.body.appendChild(gate)}gate.hidden=false;gate.innerHTML='<div class="card">'+html+'</div>';return gate.firstChild}
   function hideGate(){if(gate)gate.hidden=true}
-  function needLink(why){card('<h1>8D Reports</h1><p role="alert">'+(why||'Open this site with the team link you were sent. The link lets you in; there is no password.')+'</p><p>No link? Ask the person who runs the 8D site to send it to you.</p>')}
+  function needLink(why){card('<h1>8D Report Online Sheet-Assembly Workshop</h1><p role="alert">'+(why||'Open this site with the team link you were sent. The link lets you in; there is no password.')+'</p><p>No link? Ask the person who runs the 8D site to send it to you.</p>')}
   function askName(then){var c=card('<form novalidate style="display:contents"><h1>Welcome to the 8D reports</h1><p>Type your name once. Your team sees it on the reports and actions you work on.</p>'+
       '<label>Your name<input name="nm" autocomplete="name" maxlength="80" required></label><button class="btn primary" type="submit">Continue</button><div class="msg" role="status"></div></form>');
     var f=c.querySelector('form');f.nm.focus();
@@ -562,7 +562,7 @@ textarea.grow{min-height:38px;resize:none;field-sizing:content;max-height:14em;o
         if(r.error){f.querySelector('button').disabled=false;msg.textContent='Could not save your name. Check your connection and try again.';return}
         myName=v;names[me.id]=v;then()})}}
   function renderBar(note){if(!bar){bar=document.createElement('div');bar.id='ga8d-bar';document.body.insertBefore(bar,document.body.firstChild)}
-    bar.innerHTML='<span><b>Shared 8D reports.</b> Everyone with the team link sees the same reports<span id="ga8d-you"></span>.</span>'+
+    bar.innerHTML='<span><b>8D Report Online Sheet-Assembly Workshop.</b> Everyone who opens this site sees the same reports<span id="ga8d-you"></span>.</span>'+
       '<span class="acts"><span id="ga8d-msg" role="status"></span><span id="ga8d-move"></span><button type="button" class="btn" id="ga8d-name">'+(myName?'Change name':'Add your name (optional)')+'</button></span>';
     if(myName)bar.querySelector('#ga8d-you').textContent='. You appear as '+myName;bar.querySelector('#ga8d-msg').textContent=note||'';
     offerMove();
@@ -604,13 +604,14 @@ textarea.grow{min-height:38px;resize:none;field-sizing:content;max-height:14em;o
   function teamKey(){var m=location.search.match(/[?&]team=([A-Za-z0-9_-]{8,128})/);return m?m[1]:''}
   function dropKey(){var q=location.search.replace(/([?&])team=[^&]*&?/,'$1').replace(/[?&]$/,'');history.replaceState(null,'',location.pathname+q+location.hash)}
   function joinWith(key){return sb.rpc('ga8d_join',{p_key:key}).then(function(r){if(r.error)throw r.error;return r.data===true})}
-  function start(){var key=teamKey();
+  /* a key in config.js opens the plain site address to everyone; a ?team= link still works on top */
+  function start(){var key=teamKey()||String(C.teamKey||'');
     sb.auth.getSession().then(function(r){var s=r.data&&r.data.session;
       /* a visitor without the team link is not signed in at all, so strangers create nothing in the project */
       if(!s&&!key)return needLink();
       return(s?Promise.resolve(s.user):sb.auth.signInAnonymously().then(function(a){if(a.error)throw a.error;return a.data.user})).then(function(u){
         me=u;
-        if(key)return joinWith(key).then(function(ok){dropKey();if(!ok)return needLink('This team link is not valid any more. Ask for the latest link.');enter(u)});
+        if(key)return joinWith(key).then(function(ok){if(teamKey())dropKey();if(!ok)return needLink('This team link is not valid any more. Ask for the latest link.');enter(u)});
         return sb.rpc('ga8d_member').then(function(m){if(m.data===true)enter(u);else needLink()})})})
     .catch(function(e){var m=String(e&&e.message||'');
       needLink(/anonymous/i.test(m)?'The site is not set up yet: anonymous sign-ins are turned off in Supabase.':'The 8D data service did not answer. Check your internet connection, then reload this page.')})}
