@@ -325,6 +325,7 @@ textarea.grow{min-height:38px;resize:none;field-sizing:content;max-height:14em;o
 .titlebtn.untitled{color:var(--muted)}
 .recur{margin:2px 0 0;font-size:.88rem;color:var(--fg);background:var(--accent-soft);border-radius:6px;padding:6px 10px;max-width:70ch}
 .recur a{font-weight:600}
+.recur.dupno{background:var(--bad-soft)}
 @media (max-width:860px){.att,.charts{grid-template-columns:minmax(0,1fr)}}
 .isn{width:100%;border-collapse:collapse;table-layout:fixed}
 .isn th,.isn td{border-top:1px solid var(--line);padding:6px 6px 6px 0;vertical-align:top;text-align:left}
@@ -345,7 +346,10 @@ textarea.grow{min-height:38px;resize:none;field-sizing:content;max-height:14em;o
 .aibox li:first-child{border-top:0;padding-top:0}
 .aibox .aihd{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .aibox .src{font-size:.75rem;color:var(--muted)}
-.ai.panel .aibox{background:none;border:0;padding:0}
+#aiwrap{border-top:1px solid var(--line);padding-top:14px}
+#aiwrap h3{margin:0;font-size:.95rem}
+#aiwrap .aibox{background:none;border:0;padding:0}
+.find .sug{display:block;margin-top:2px}
 .files{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
 .files li{display:grid;grid-template-columns:3.2rem minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
 .files li:first-child{border-top:0}
@@ -411,6 +415,7 @@ textarea.grow{min-height:38px;resize:none;field-sizing:content;max-height:14em;o
         <h1><button type="button" id="r-title" class="titlebtn" title="Edit the title">8D Report</button></h1>
         <p class="rsub" id="r-sub"></p>
         <p class="recur" id="r-recur" hidden></p>
+        <p class="recur dupno" id="r-dup" role="alert" hidden></p>
         <span class="note" id="r-who"></span>
       </div>
       <div class="tools">
@@ -437,8 +442,7 @@ textarea.grow{min-height:38px;resize:none;field-sizing:content;max-height:14em;o
     <div class="bench">
       <section class="panel detail" id="detail"></section>
       <div class="side">
-        <aside class="panel checks ai" id="aiwrap" hidden></aside>
-        <aside class="panel checks" id="checks" aria-live="polite"></aside>
+        <aside class="panel checks" id="checks"><div class="checks" id="chk-body" aria-live="polite"></div><div class="checks" id="aiwrap" hidden></div></aside>
         <aside class="panel checks hist" id="hist"></aside>
       </div>
     </div>
@@ -715,7 +719,7 @@ function rList(){
     .filter(x=>!q||[x.r.meta.no,x.r.meta.title,x.r.meta.customer,x.r.meta.part,x.r.meta.category,x.r.meta.type].join(' ').toLowerCase().includes(q))
     .sort(cmp);
   $('l-rows').innerHTML=rows.map(({id,r,f})=>`<tr>
-    <td class="mono" data-label="8D no.">${esc(r.meta.no)||'–'}</td>
+    <td class="mono" data-label="8D no.">${esc(r.meta.no)||'–'}${sameNo(id,r.meta.no).length?' <span class="pill bad">Number used twice</span>':''}</td>
     <td><a class="ttl" href="#r-${esc(id)}">${esc(r.meta.title)||'(Untitled)'}</a><span class="subl">${esc([r.meta.customer,r.meta.part,r.meta.category,r.meta.type].filter(Boolean).join(' · '))}</span></td>
     <td data-label="Current step">${f.cur?`<span class="pill info">${f.cur.id} ${esc(f.cur.th)}</span>`:f.openA?`<span class="pill warn">Closed, ${plural(f.openA,'action')} open</span>`:'<span class="pill ok">Closed</span>'}${f.lateT?' <span class="pill bad">Past target</span>':''}
       <div class="prog" role="img" aria-label="${f.nd} of 9 disciplines complete" title="${f.nd} of 9 complete">${D.map(c=>`<i class="${r.d[c.id].status}"></i>`).join('')}</div></td>
@@ -750,7 +754,7 @@ function rMeta(){$('meta').innerHTML=
 let metaOpen=false;
 function rHead(){const m=S.meta;
   const tb=$('r-title');tb.textContent=m.title.trim()||'Untitled 8D · add a title';tb.classList.toggle('untitled',!m.title.trim());tb.disabled=RO;
-  rRecur();
+  rRecur();rDupNo();
   $('r-sub').innerHTML=[m.no?`<span class="mono">${esc(m.no)}</span>`:'',esc(m.customer),esc(m.part)].filter(Boolean).join(' · ')||'<span class="muted">No 8D number, customer or part yet</span>';
   $('meta').hidden=!metaOpen;const b=$('b-meta');b.setAttribute('aria-expanded',metaOpen);b.textContent=metaOpen?'Done editing':(RO?'Show details':'Edit details')}
 function rLight(){const f=facts(S),o=pd(S.meta.opened);
@@ -759,7 +763,7 @@ function rLight(){const f=facts(S),o=pd(S.meta.opened);
    `<li>Opened <b>${esc(fmt(S.meta.opened))||'–'}</b>${f.days==null?'':` · day <b class="mono">${f.days}</b>`}</li>`+
    `<li><b class="mono">${f.nd}/9</b> disciplines complete</li>`+
    `<li><b class="mono">${f.dn}/${f.live}</b> actions done${f.ov?` <span class="pill bad">${f.ov} overdue</span>`:''}</li>`+
-   (n=>n?`<li><button class="issuelink" data-jump="checks">${plural(n,'issue')} to review</button></li>`:'')(issuesOf(checksFor(S)).length)+
+   (n=>n?`<li><button class="issuelink" data-jump="checks">${plural(n,'issue')} to review</button></li>`:'')(issuesOf(checksFor(S)).length+aiIssues())+
    (k=>k?`<li><button class="issuelink" data-jump="checks"><span class="pill ovr">${plural(k,'exception')}</span></button></li>`:'')(D.filter(c=>S.d[c.id].status==='done'&&S.d[c.id].override).length);
   $('actsum').textContent=`${plural(S.actions.length,'action')} · ${f.dn} done`+(f.ov?` · ${f.ov} overdue`:'');
   $('road').innerHTML=D.map((c,i)=>{const x=S.d[c.id],t=tgt(S,c);let ft='';
@@ -769,10 +773,20 @@ function rLight(){const f=facts(S),o=pd(S.meta.opened);
     const ovr=x.status==='done'&&x.override;
     if(ovr)ft+=`<span class="t-warn"> · Exception: ${plural(x.override.issues.length||1,'open issue')}</span>`;
     const stateTxt=ovr?'complete, with an exception':ST[x.status].toLowerCase();
-    return`<button class="step ${x.status}${ovr?' ovr':''}${i===sel?' sel':''}" data-step="${i}" aria-pressed="${i===sel}" aria-label="${c.id} ${esc(c.th)}, ${stateTxt}"><span class="hd"><span class="id">${c.id}</span><span class="dot" aria-hidden="true" title="${ovr?'Completed with an exception':ST[x.status]}">${x.status==='done'?(ovr?'!':'✓'):''}</span></span><span class="nm">${esc(c.th)}</span><span class="snm" aria-hidden="true">${SHORT[c.id]}</span><span class="key">${esc(x.key)||'<i>No key point yet</i>'}</span><span class="ft">${ft}</span></button>`}).join('');
+    return`<button class="step ${x.status}${ovr?' ovr':''}${i===sel?' sel':''}" data-step="${i}" aria-pressed="${i===sel}" aria-label="${c.id} ${esc(c.th)}, ${stateTxt}"><span class="hd"><span class="id">${c.id}</span><span class="dot" aria-hidden="true" title="${ovr?'Completed with an exception':ST[x.status]}">${x.status==='done'?(ovr?'!':'✓'):''}</span></span><span class="nm">${esc(c.th)}</span><span class="snm" aria-hidden="true">${SHORT[c.id]}</span><span class="key">${esc(keyOf(S,c))||'<i>Nothing written yet</i>'}</span><span class="ft">${ft}</span></button>`}).join('');
   rChecks()}
 
 const CLAB={bad:'Fix',warn:'Check',info:'Tip',ovr:'Exception'};
+/* the roadmap card and the PDF's key point come from each step's main field, so they cannot drift from it.
+   A typed card summary replaces it, and the quality check flags one that no longer matches. */
+const PRIME={D0:'symptom',D1:'notes',D2:'statement',D3:'ica',D4:'occ',D5:'occ',D6:'impl',D7:'sys',D8:'close'};
+const PRIME_L=id=>{const c=D.find(q=>q.id===id),f=c&&c.fields.find(q=>q[0]===PRIME[id]);return f?f[1].toLowerCase():'main field'};
+function keyOf(r,c){const x=r.d[c.id];if(x.key.trim())return x.key.trim();
+  const t=(x.f[PRIME[c.id]]||'').trim().replace(/\s+/g,' ');if(t)return t.length>220?t.slice(0,217)+'…':t;
+  return c.id==='D1'&&r.team.some(m=>m.name.trim())?r.team.filter(m=>m.name.trim()).map(m=>m.name.trim()+(m.role?' ('+m.role+')':'')).join(', '):''}
+const words=t=>new Set(String(t).toLowerCase().match(/[a-z0-9.,%-]*\d[a-z0-9.,%-]*|[a-z]{4,}/g)||[]);
+function keyDrift(x,id){const k=x.key.trim(),m=(x.f[PRIME[id]]||'').trim();if(!k||!m||/[฀-๿]/.test(k+m))return false;
+  const kw=[...words(k)],mw=words(m);if(kw.length<3)return false;return kw.filter(w=>mw.has(w)).length/kw.length<0.25}
 /* a finding is [level, step, text, go, nogate, short, reopen]
    go: "s<n>" opens discipline n, "a<i>" opens action row i. short: the same finding worded for the completion gate (an action's description is kept out of
    the panel text so typing it does not rewrite the live region). reopen: a step this finding offers to move back to In progress. */
@@ -783,7 +797,7 @@ const findBtn=(f,forGate)=>{const[lv,id,t,go,,sh,reopen]=f;
 let lastChecks='';
 const issuesOf=w=>w.filter(f=>f[0]==='bad'||f[0]==='warn');
 function rChecks(){const w=checksFor(S),none=D.every(c=>S.d[c.id].status==='todo'),sig=openId+'|'+none+'|'+JSON.stringify(w.map(f=>[f[0],f[1],f[2],f[3],f[4],f[6]]));if(sig===lastChecks)return;lastChecks=sig;
-  $('checks').innerHTML=`<h2 id="chk-h" tabindex="-1">8D quality check</h2><p class="note" style="margin:0">Common 8D mistakes, checked as you fill in the report. Select one to go to it.</p>`+
+  $('chk-body').innerHTML=`<h2 id="chk-h" tabindex="-1">8D quality check</h2><p class="note" style="margin:0">Common 8D mistakes, checked as you fill in the report. Select one to go to it.</p>`+
    (w.length?`<ul>${w.map(f=>`<li>${findBtn(f)}</li>`).join('')}</ul>`:none?`<p class="note" style="margin:0">Nothing to check yet. Checks start once you begin D0.</p>`:`<p style="margin:0"><span class="pill ok">Clear</span> ${esc(clearText(S))}</p>`)}
 /* "Pass" claimed more than the check had looked at: say how many steps were actually checked */
 const clearText=r=>{const n=D.filter(c=>r.d[c.id].status!=='todo').length;return n===0?'Nothing to check yet.':`No common mistakes in the ${plural(n,'step')} started so far.`}
@@ -810,6 +824,7 @@ function checksFor(S){const w=[],d=S.d,add=(lv,id,t,go,nogate,short,reopen)=>w.p
   if(done('D0')&&empty('D0','era'))add('warn','D0','D0 is complete but no emergency response is recorded.','',false,'No emergency response is recorded.','D0');
   if(done('D4')&&empty('D4','occ'))add('bad','D4','D4 is complete but there is no root cause of occurrence.','',false,'There is no root cause of occurrence.','D4');
   if(done('D5')&&empty('D5','occ'))add('warn','D5','D5 is complete but there is no corrective action for the occurrence.','',false,'There is no corrective action for the occurrence.','D5');
+  D.forEach(c=>{if(d[c.id].status!=='todo'&&keyDrift(d[c.id],c.id))add('warn',c.id,`The ${c.id} card summary does not match the ${PRIME_L(c.id)}. The customer sees both in the PDF.`,'',true)});
   if(done('D0')&&empty('D0','symptom'))add('warn','D0','D0 is complete but the symptom is empty.','',false,'The symptom is not described.','D0');
   if(done('D3')&&empty('D3','ica'))add('warn','D3','D3 is complete but no containment is described.','',false,'No interim containment is described.','D3');
   if(done('D3')&&empty('D3','eff'))add('warn','D3','D3 is complete but there is no evidence the containment works.','',false,'There is no evidence the containment works.','D3');
@@ -888,7 +903,8 @@ function rDetail(){const c=D[sel],p='d.'+c.id,x=S.d[c.id];
   if(DACT[c.id])h+=dActs(DACT[c.id]);
   if(AI&&!RO&&(c.id==='D5'||c.id==='D7'))h+=aiBox(c.id==='D5'?'act5':'act7');
   h+=rFiles(c.id);
-  h+=fld(p+'.key','Roadmap summary',tx(p+'.key','One or two lines for the roadmap card, once the fields above are filled in',2));
+  h+=fld(p+'.key','Card summary (optional)',tx(p+'.key',`Leave empty and the roadmap card and PDF show the ${PRIME_L(c.id)}`,2))+
+    (x.key.trim()?`<p class="note" style="margin:-6px 0 0">The roadmap card and the PDF show this summary instead of the ${esc(PRIME_L(c.id))}. ${RO?'':`<button class="linkbtn" data-keyclear="${c.id}">Show the ${esc(PRIME_L(c.id))} instead</button>`}</p>`:'');
   h+=`<div class="row">`+fld(p+'.done','Completed on',inp(p+'.done','date'))+(c.target!=null?fld(p+'.target','Target (days from opening)',inp(p+'.target','number','','min="0"')):'')+`</div>`+
     (x.status!=='done'&&pd(x.prevDone)?`<p class="note" style="margin:0">Previously completed ${esc(fmt(x.prevDone))}. That date comes back if you complete this step again.</p>`:'');
   $('detail').innerHTML=h;fillNames()}
@@ -1012,10 +1028,10 @@ async function xlsxReport(r){await lib('xlsx');const f=facts(r),m=r.meta,wb=XLSX
     ['Days open',f.days],['Current step',f.cur?f.cur.id+' '+f.cur.th:'Closed'],['Disciplines complete',f.nd+'/9'],['Actions done',f.dn+'/'+f.live],['Actions overdue',f.ov],
     ['Opened by',nm[r.createdBy]||''],['Last edited by',nm[r.updatedBy||r.createdBy]||''],['Exported',stamp()],[],
     ['Step','Discipline','Status','Completed on','Target (days)','Target date','Late','Completed with exception','Open at that time','Exception reason','Key point']];
-  D.forEach(c=>{const x=r.d[c.id],t=tgt(r,c),ov=x.status==='done'&&x.override;sum.push([c.id,c.th,stName(x.status),x.done,t?t.days:'',t?iso(t.due):'',t&&t.late?'Yes':'',ov?'Yes':'',ov?x.override.issues.join(' | '):'',ov?x.override.reason:'',x.key])});
+  D.forEach(c=>{const x=r.d[c.id],t=tgt(r,c),ov=x.status==='done'&&x.override;sum.push([c.id,c.th,stName(x.status),x.done,t?t.days:'',t?iso(t.due):'',t&&t.late?'Yes':'',ov?'Yes':'',ov?x.override.issues.join(' | '):'',ov?x.override.reason:'',keyOf(r,c)])});
   XLSX.utils.book_append_sheet(wb,sheet(sum,[20,40,13,13,13,13,7,12,50,40,70]),'Summary');
   const det=[['Step','Discipline','Field','Content']];
-  D.forEach(c=>{const x=r.d[c.id];det.push([c.id,c.th,'Key point',x.key]);c.fields.forEach(([k,l,,,g])=>{if(!g||x.f[k].trim())det.push([c.id,c.th,l,x.f[k]])});x.files.forEach(f=>det.push([c.id,c.th,'Attachment',f.name]))});
+  D.forEach(c=>{const x=r.d[c.id];det.push([c.id,c.th,'Key point',keyOf(r,c)]);c.fields.forEach(([k,l,,,g])=>{if(!g||x.f[k].trim())det.push([c.id,c.th,l,x.f[k]])});x.files.forEach(f=>det.push([c.id,c.th,'Attachment',f.name]))});
   XLSX.utils.book_append_sheet(wb,sheet(det,[6,22,34,90]),'D0-D8 details');
   XLSX.utils.book_append_sheet(wb,sheet([['Name','Role','Department / function'],...r.team.map(t=>[t.name,t.role,t.dept])],[30,18,30]),'D1 Team');
   XLSX.utils.book_append_sheet(wb,sheet([['ID','Type','Action','Owner','Due','Status','Overdue'],
@@ -1041,13 +1057,13 @@ function pdfBlocks(r,nm){const f=facts(r),m=r.meta,o=pd(m.opened),B=[],e=esc,v=s
     <div class="grid"><div><span class="k">Customer</span><b>${v(m.customer)}</b></div><div><span class="k">Part / product</span><b>${v(m.part)}</b></div><div><span class="k">Problem category</span><b>${v(m.category)}</b></div><div><span class="k">Problem type</span><b>${v(m.type)}</b></div><div><span class="k">Opened</span><b>${v(fmt(m.opened))}${f.days==null?'':' · '+plural(f.days,'day')}</b></div>
     <div><span class="k">Current step</span><b>${f.cur?f.cur.id+' '+e(f.cur.th):'Closed'}</b></div><div><span class="k">Disciplines complete</span><b>${f.nd}/9</b></div><div><span class="k">Actions done</span><b>${f.dn}/${f.live}${f.ov?` <span class="late">· ${f.ov} overdue</span>`:''}</b></div></div>`);
   B.push(`<h2>Roadmap D0–D8</h2><table><tr><th style="width:34px">Step</th><th style="width:118px">Discipline</th><th style="width:72px">Status</th><th style="width:76px">Completed</th><th style="width:84px">Target</th><th>Key point</th></tr>${D.map(c=>{const x=r.d[c.id],t=tgt(r,c);
-    return`<tr><td><b>${c.id}</b></td><td>${e(c.th)}</td><td class="${x.status}">${ST[x.status]}</td><td>${e(fmt(x.done))}${x.done&&o&&pd(x.done)?`<br><span class="k">day ${diff(o,pd(x.done))}</span>`:''}</td><td${t&&t.late?' class="late"':''}>${t?`Day ${t.days}<br>${e(fmt(iso(t.due)))}${t.late?'<br>Late':''}`:''}</td><td>${e(x.key)}</td></tr>`}).join('')}</table>`);
+    return`<tr><td><b>${c.id}</b></td><td>${e(c.th)}</td><td class="${x.status}">${ST[x.status]}</td><td>${e(fmt(x.done))}${x.done&&o&&pd(x.done)?`<br><span class="k">day ${diff(o,pd(x.done))}</span>`:''}</td><td${t&&t.late?' class="late"':''}>${t?`Day ${t.days}<br>${e(fmt(iso(t.due)))}${t.late?'<br>Late':''}`:''}</td><td>${e(keyOf(r,c))}</td></tr>`}).join('')}</table>`);
   const ck=checksFor(r);
   B.push(`<h2>8D quality check <small>Checked automatically on export</small></h2>`+(ck.length?`<table>${ck.map(([lv,id,t])=>`<tr><td style="width:110px" class="${lv==='bad'?'late':''}">${id} · ${CLAB[lv]}</td><td>${e(t)}</td></tr>`).join('')}</table>`:`<p class="done" style="margin:0">${e(clearText(r))}</p>`));
   D.forEach(c=>{const x=r.d[c.id],t=tgt(r,c);
     let h=`<h2><span>${c.id} · ${e(c.th)}</span><small><span class="${x.status}">${ST[x.status]}</span>${x.done?' · completed '+e(fmt(x.done)):''}${t?` · target day ${t.days}`:''}</small></h2>
       ${x.status==='done'&&x.override?`<table style="margin-bottom:6px"><tr><td class="late" style="background:#fbefd3"><b>Completed with an exception</b> on ${e(fmt(x.override.at.slice(0,10)))} by ${e(nm[x.override.by]||'Someone')}. Open at that time: ${x.override.issues.map(s=>e(s)).join(' · ')||'–'}<br><b>Reason:</b> ${x.override.reason?e(x.override.reason):'<span class="late">No reason recorded</span>'}</td></tr></table>`:''}
-      <table class="kv"><tr><th>Key point</th><td>${v(x.key)}</td></tr>${c.fields.filter(q=>!q[4]||x.f[q[0]].trim()).map(([k,l])=>`<tr><th>${e(l)}</th><td>${v(x.f[k])}</td></tr>`).join('')}${x.files.length?`<tr><th>Attachments</th><td>${x.files.map(f=>e(f.name)).join('<br>')}</td></tr>`:''}</table>`;
+      <table class="kv"><tr><th>Key point</th><td>${v(keyOf(r,c))}</td></tr>${c.fields.filter(q=>!q[4]||x.f[q[0]].trim()).map(([k,l])=>`<tr><th>${e(l)}</th><td>${v(x.f[k])}</td></tr>`).join('')}${x.files.length?`<tr><th>Attachments</th><td>${x.files.map(f=>e(f.name)).join('<br>')}</td></tr>`:''}</table>`;
     if(c.id==='D1')h+=`<table style="margin-top:6px"><tr><th>Name</th><th>Role</th><th>Department / function</th></tr>${r.team.length?r.team.map(t=>`<tr><td>${v(t.name)}</td><td>${e(t.role)}</td><td>${v(t.dept)}</td></tr>`).join(''):'<tr><td colspan="3">No team members yet</td></tr>'}</table>`;
     if(c.id==='D7')h+=`<table style="margin-top:6px"><tr><th>Prevent recurrence checklist (${r.chk.filter(Boolean).length}/6)</th><th style="width:80px">Result</th></tr>${CHK.map((t,i)=>`<tr><td>${e(t)}</td><td class="${r.chk[i]?'done':'todo'}">${r.chk[i]?'Done':'Not done'}</td></tr>`).join('')}</table>`;
     B.push(h)});
@@ -1126,12 +1142,14 @@ function aiBox(k){const L=AIK[k],s=aiS[k]||{},busy=aiRun&&aiRun.kind===k,other=a
   let h=`<div class="aibox" id="ai-${k}"><div class="aibar"><button class="btn small${busy?'':''}" data-ai="${k}"${other?' disabled':''}>${busy?'Stop':s.text||s.items?L.again:L.btn}</button>`+
     `<span class="note" role="status">${busy&&!s.text&&!s.started?'Thinking…':busy?'Writing…':s.err?esc(s.err):s.text||s.items?'From Claude. Check it before you use it.':''}</span></div>`;
   if(k==='d2'&&s.text)h+=`<p class="aitext">${esc(s.text)}</p>`+(busy?'':`<div class="aibar"><button class="btn small primary" data-aiuse="d2">Use as problem statement</button><button class="btn small" data-aidrop="d2">Discard</button></div>`);
-  if(k==='review'&&s.items)h+=s.items.length?`<ul>${s.items.map(f=>`<li><span class="aihd"><span class="pill ${f.sev==='high'?'bad':f.sev==='medium'?'warn':'info'}">${f.sev}</span>${f.step?`<button class="linkbtn" data-go="s${f.step.slice(1)}">${f.step}</button>`:''}</span><span>${esc(f.issue)}</span>${f.sug?`<span class="note">${esc(f.sug)}</span>`:''}</li>`).join('')}</ul>`:'<p class="note" style="margin:0">Claude found nothing a customer would push back on.</p>';
+  if(k==='review'&&s.items)h+=s.items.length?`<ul>${s.items.map(f=>{const lv=SEV[f.sev];return`<li><div class="fwrap"><button class="find" ${f.step?`data-go="s${f.step.slice(1)}"`:'tabindex="-1"'}><span class="pill ${lv}">${f.step||'8D'} · ${CLAB[lv]}</span><span>${esc(f.issue)}${f.sug?`<span class="note sug">${esc(f.sug)}</span>`:''}</span>${f.step?CHEV:''}</button></div></li>`}).join('')}</ul>`:'<p class="note" style="margin:0">Claude found nothing a customer would push back on.</p>';
   if((k==='act5'||k==='act7')&&s.items)h+=s.items.length?`<ul>${s.items.map((a,i)=>`<li><span class="aihd"><span class="src">${esc(a.type)}</span></span><span>${esc(a.text)}</span><span>${a.added?`<span class="note">Added as ${esc(a.added)}</span>`:`<button class="btn small" data-aiadd="${k}|${i}">+ Add as action</button>`}</span></li>`).join('')}</ul>`:'<p class="note" style="margin:0">No new actions to suggest.</p>';
   return h+'</div>'}
 function rAI(){const w=$('aiwrap');if(!AI||!S){w.hidden=true;return}w.hidden=false;
-  w.innerHTML=`<h2>Ask Claude</h2><p class="note" style="margin:0">A second pair of eyes before the customer reads it. Nothing is changed until you choose to.</p>`+aiBox('review')}
-function aiPaint(k){if(k==='tr'){trBtn();return}if(k==='review'){rAI();return}const el=$('ai-'+k);if(el)el.outerHTML=aiBox(k)}
+  w.innerHTML=`<h3>Claude’s review</h3><p class="note" style="margin:0">Claude reads the whole report the way a customer would. Its findings use the same Fix, Check and Tip scale as the checks above. Nothing is changed until you choose to.</p>`+aiBox('review')}
+const SEV={high:'bad',medium:'warn',low:'info'};
+const aiIssues=()=>{const s=aiS.review;return s&&s.items?s.items.filter(f=>f.sev!=='low').length:0};
+function aiPaint(k){if(k==='tr'){trBtn();return}if(k==='review'){rAI();if(S)rLight();return}const el=$('ai-'+k);if(el)el.outerHTML=aiBox(k)}
 async function aiGo(k){if(!AI||!S)return;
   if(aiRun){const was=aiRun.kind;aiRun.ctl.abort();if(was===k)return}
   const L=AIK[k],miss=L.need();if(miss){aiS[k]={err:miss};aiPaint(k);return}
@@ -1147,6 +1165,14 @@ async function aiGo(k){if(!AI||!S)return;
   aiPaint(k);aiOthers(k)}
 /* while one call runs, the other Claude buttons wait */
 function aiOthers(k){Object.keys(AIK).forEach(o=>{if(o!==k)aiPaint(o)})}
+
+/* the 8D number is the reference the customer quotes back: two reports must never share one */
+const noKey=v=>String(v||'').trim().toUpperCase();
+const sameNo=(id,no)=>{const k=noKey(no);return k?Object.entries(reports).filter(([x,r])=>x!==id&&noKey(r.meta.no)===k):[]};
+function rDupNo(){const el=$('r-dup');if(!S){el.hidden=true;return}const o=sameNo(openId,S.meta.no);
+  if(!o.length){el.hidden=true;return}
+  el.innerHTML=`<b>${esc(S.meta.no.trim())}</b> is also the number of ${o.slice(0,3).map(([k,r])=>`<a href="#r-${esc(k)}">${esc(r.meta.title.trim()||'an untitled 8D')}</a>`).join(', ')}. Each 8D needs its own number.`+
+    (RO?'':` <button class="linkbtn" data-editno="1">Change this number</button>`);el.hidden=false}
 
 /* ---------- overview ---------- */
 const normPart=v=>String(v||'').trim().toLowerCase().replace(/\s+/g,' ');
@@ -1288,6 +1314,9 @@ document.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)r
   if(!S)return;
   if(t.id==='b-pdf'){exportRun('pdf',t);return}
   if(ds.ai){aiGo(ds.ai);return}
+  if(ds.editno){metaOpen=true;rHead();const n=$(fid('meta.no'));if(n){n.focus();n.select()}return}
+  if(ds.keyclear){if(RO)return;const id=ds.keyclear,was=S.d[id].key;S.d[id].key='';touch('d.'+id+'.key');rDetail();rLight();lock();
+    showToast(`The ${id} card now shows the ${PRIME_L(id)}.`,()=>{S.d[id].key=was;touch('d.'+id+'.key');rDetail();rLight();lock()});return}
   if(ds.attpick){const n=$('att-in-'+ds.attpick);if(n)n.click();return}
   if(ds.attget){const[id,i]=ds.attget.split('|');attGet(id,+i,t);return}
   if(ds.attdel){if(RO)return;const[id,i]=ds.attdel.split('|'),f=S.d[id].files[+i];if(!f)return;
@@ -1384,7 +1413,7 @@ async function create(ex,btn,src){if(!db||RO)return;btn.disabled=true;
   const r=ex?example():blank(),now=new Date().toISOString(),id=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
   if(src){r.meta.title=('Copy of '+src.meta.title.trim()).trim();r.meta.customer=src.meta.customer;r.meta.part=src.meta.part;r.meta.category=src.meta.category;r.meta.type=src.meta.type;
     r.team=clone(src.team);r.d.D1.f=clone(src.d.D1.f);r.d.D2.f=clone(src.d.D2.f)}
-  if(!ex){const y=new Date().getFullYear(),n=Math.max(0,...Object.values(reports).map(x=>{const m=x.meta.no.match(new RegExp('^8D-'+y+'-(\d+)$'));return m?+m[1]:0}))+1;/* highest number this year + 1, so a deleted report never causes a repeat */r.meta.no='8D-'+y+'-'+String(n).padStart(3,'0')}
+  if(!ex){const y=new Date().getFullYear(),n=Math.max(0,...Object.values(reports).map(x=>{const m=x.meta.no.match(new RegExp('^8D-'+y+'-(\\d+)$'));return m?+m[1]:0}))+1;/* highest number this year + 1, so a deleted report never causes a repeat */r.meta.no='8D-'+y+'-'+String(n).padStart(3,'0')}
   r.createdBy=r.updatedBy=myId||'';r.createdAt=r.updatedAt=now;r.log=[{t:now,by:myId||'',m:src?`8D report opened as a copy of ${src.meta.no||'an earlier 8D'}`:'8D report opened'}];
   try{await db.collection('reports').doc(id).set(r);reports[id]=norm(r);banner('l-note','');location.hash='r-'+id}
   catch(e){if(e&&e.code==='invalid_argument'){RO=true;banner('l-note','You have view-only access, so you cannot open a new report.')}
